@@ -1,0 +1,19 @@
+spring:
+  jpa:
+    show-sql: false
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+pawstep:
+  triage:
+    require-reviewed: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

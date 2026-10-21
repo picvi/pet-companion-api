@@ -1,0 +1,23 @@
+CREATE TABLE food_safety_item (
+    code VARCHAR(40) PRIMARY KEY,
+    level VARCHAR(8) NOT NULL,
+    quick_order SMALLINT,
+    name_en VARCHAR(80) NOT NULL,
+    name_pl VARCHAR(80) NOT NULL,
+    why_en TEXT NOT NULL,
+    why_pl TEXT NOT NULL,
+    how_en TEXT,
+    how_pl TEXT,
+    aliases_en TEXT[] NOT NULL DEFAULT '{}',
+    aliases_pl TEXT[] NOT NULL DEFAULT '{}',
+    sources VARCHAR(10)[] NOT NULL,
+    reviewed_by VARCHAR(80),
+    reviewed_on DATE,
+    CONSTRAINT ck_food_safety_level CHECK (level IN ('NEVER', 'LITTLE', 'YES')),
+    CONSTRAINT ck_food_safety_code CHECK (code ~ '^[A-Z0-9_]+$'),
+    CONSTRAINT uq_food_safety_quick_order UNIQUE (quick_order),
+    CONSTRAINT ck_food_safety_quick_order CHECK (quick_order IS NULL OR quick_order BETWEEN 1 AND 9),
+    CONSTRAINT ck_food_safety_how CHECK ((how_en IS NULL) = (how_pl IS NULL)),
+    CONSTRAINT ck_food_safety_sources CHECK (cardinality(sources) > 0),
+    CONSTRAINT ck_food_safety_review CHECK ((reviewed_by IS NULL) = (reviewed_on IS NULL))
+);

@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2026-10-15T09:14:03Z",
+  "reason": "SOMETHING_WRONG",
+  "period": { "from": "2026-10-09", "to": "2026-10-15" },
+  "pet": {
+    "name": "Mila",
+    "sex": "FEMALE",
+    "birthDate": "2026-07-30",
+    "ageWeeks": 11,
+    "breedCode": "POODLE_MINIATURE",
+    "neutered": false,
+    "microchipNumber": "616093900123456",
+    "weight": { "grams": 3400, "localDate": "2026-10-12", "previousGrams": 3050, "previousLocalDate": "2026-10-05" }
+  },
+  "mainWorry": {
+    "concern": "DIARRHOEA",
+    "trend": "WORSENING",
+    "count": 4,
+    "firstSeen": "2026-10-12",
+    "lastSeen": "2026-10-14",
+    "daily": [
+      { "localDate": "2026-10-09", "count": 0 },
+      { "localDate": "2026-10-10", "count": 0 },
+      { "localDate": "2026-10-11", "count": 0 },
+      { "localDate": "2026-10-12", "count": 1 },
+      { "localDate": "2026-10-13", "count": 1 },
+      { "localDate": "2026-10-14", "count": 2 },
+      { "localDate": "2026-10-15", "count": 0 }
+    ],
+    "flags": ["MUCUS"],
+    "also": [
+      { "concern": "LOW_APPETITE", "count": 2 },
+      { "concern": "VOMITING", "count": 1 }
+    ]
+  },
+  "conditions": [
+    { "kind": "ALLERGY", "ingredientCode": "CHICKEN", "certainty": "SUSPECTED", "text": null, "since": "2026-09-20" }
+  ],
+  "food": {
+    "mealsLogged": 28,
+    "diet": { "from": "2026-10-09", "to": "2026-10-15", "mainFoods": [], "treatsAndChews": [], "changes": [], "proteins": [] }
+  },
+  "days": [
+    {
+      "localDate": "2026-10-14",
+      "mealsLogged": 3,
+      "events": [
+        { "logId": "0199a1e2-7c3b-7a10-8e55-3f0c2d9a41b7", "type": "TOILET", "detail": "POO", "stoolScore": 6, "flags": ["MUCUS"], "minuteOfDay": 505, "note": null, "weightGrams": null, "label": null, "dose": null },
+        { "logId": "0199a1e2-7c3b-7a10-8e55-3f0c2d9a41b8", "type": "SYMPTOM", "detail": "VOMITING", "stoolScore": null, "flags": [], "minuteOfDay": 640, "note": null, "weightGrams": null, "label": null, "dose": null }
+      ]
+    }
+  ],
+  "care": { "vaccines": [], "parasites": [] },
+  "lastVisit": { "id": "0199a1e2-7c3b-7a10-8e55-3f0c2d9a41b9", "visitedOn": "2026-09-28", "reason": "CHECK_UP", "outcomes": ["FINE"], "clinic": "VetCare Mokotow" },
+  "suggestedQuestions": [
+    { "code": "DIARRHOEA_CAUSE" },
+    { "code": "DIARRHOEA_WHEN_URGENT" },
+    { "code": "DIARRHOEA_TESTS" },
+    { "code": "FOOD_CHANGED_RECENTLY" },
+    { "code": "VACCINE_DUE_SOON", "params": { "vaccineCode": "DHPPI_2" } }
+  ]
+}

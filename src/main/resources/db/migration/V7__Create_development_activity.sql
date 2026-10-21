@@ -1,0 +1,20 @@
+CREATE TABLE development_activity (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code VARCHAR(80) NOT NULL UNIQUE,
+    kind VARCHAR(20) NOT NULL,
+    category VARCHAR(30) NOT NULL,
+    start_age_weeks INT NOT NULL,
+    end_age_weeks INT NOT NULL,
+    difficulty INT NOT NULL,
+    vaccination_requirement VARCHAR(20) NOT NULL,
+    repeat_every_days INT,
+    sort_order INT NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT ck_activity_kind CHECK (kind IN ('SOCIALIZATION', 'SKILL')),
+    CONSTRAINT ck_activity_age CHECK (start_age_weeks >= 0 AND end_age_weeks > start_age_weeks),
+    CONSTRAINT ck_activity_difficulty CHECK (difficulty BETWEEN 1 AND 3),
+    CONSTRAINT ck_activity_vaccination CHECK (vaccination_requirement IN ('NONE', 'FIRST_DOSE', 'SERIES_COMPLETE')),
+    CONSTRAINT ck_activity_repeat CHECK (repeat_every_days IS NULL OR repeat_every_days > 0)
+);

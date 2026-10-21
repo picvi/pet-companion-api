@@ -1,0 +1,182 @@
+version: "2026.10.1-draft"
+rules:
+  - id: RED_FLAG_COLLAPSED
+    items: [ANY]
+    when: { flag: COLLAPSED }
+    level: GO_NOW
+    redFlag: true
+    caseIds: [RF1]
+    reason: URGENT_SIGN_REPORTED
+    steps: [{ code: SEEK_URGENT_VETERINARY_CARE }]
+    sources: [CORNELL_ER]
+    review: { status: PENDING }
+
+  - id: RED_FLAG_PALE_GUMS
+    items: [ANY]
+    when: { flag: PALE_GUMS }
+    level: GO_NOW
+    redFlag: true
+    caseIds: [RF2]
+    reason: URGENT_SIGN_REPORTED
+    steps: [{ code: SEEK_URGENT_VETERINARY_CARE }]
+    sources: [WEBVET_PARVO_SYMPTOMS, EPIC_12]
+    review: { status: PENDING }
+
+  - id: RED_FLAG_BREATHING_AT_REST
+    items: [ANY]
+    when: { flag: BREATHING_HARD_OR_FAST_AT_REST }
+    level: GO_NOW
+    redFlag: true
+    caseIds: [RF3]
+    reason: URGENT_SIGN_REPORTED
+    steps: [{ code: SEEK_URGENT_VETERINARY_CARE }]
+    sources: [VEG_PUPPY_EMERGENCIES, CORNELL_ER]
+    review: { status: PENDING }
+
+  - id: RED_FLAG_SEIZURE
+    items: [ANY]
+    when: { flag: SEIZURE }
+    level: GO_NOW
+    redFlag: true
+    caseIds: [RF4]
+    reason: URGENT_SIGN_REPORTED
+    steps: [{ code: NOTE_TIME_KEEP_HANDS_AWAY_FROM_MOUTH }]
+    sources: [CORNELL_ER, VEG_PUPPY_EMERGENCIES]
+    review: { status: PENDING }
+
+  - id: RED_FLAG_SWOLLEN_HARD_BELLY
+    items: [ANY]
+    when: { flag: SWOLLEN_HARD_BELLY_WITH_UNPRODUCTIVE_RETCHING }
+    level: GO_NOW
+    redFlag: true
+    caseIds: [RF5, T26, T27]
+    reason: URGENT_SIGN_REPORTED
+    steps: [{ code: SEEK_URGENT_VETERINARY_CARE }]
+    sources: [VCA_BLOAT, EPIC_12]
+    review: { status: PENDING }
+
+  - id: RED_FLAG_CANNOT_URINATE
+    items: [ANY]
+    when: { flag: STRAINING_TO_URINATE_NO_URINE }
+    level: GO_NOW
+    redFlag: true
+    caseIds: [RF6, U1]
+    reason: URGENT_SIGN_REPORTED
+    steps: [{ code: SEEK_URGENT_VETERINARY_CARE }]
+    sources: [CORNELL_ER]
+    review: { status: PENDING }
+
+  - id: RED_FLAG_HIVES_OR_FACE_SWELLING
+    items: [ANY]
+    when: { flag: FACE_SWELLING_OR_HIVES }
+    level: GO_NOW
+    redFlag: true
+    caseIds: [RF7, S4, N7]
+    reason: URGENT_SIGN_REPORTED
+    steps: [{ code: SEEK_URGENT_VETERINARY_CARE }]
+    sources: [CORNELL_ER, VEG_PUPPY_EMERGENCIES, VCA_VACCINE_CARE]
+    review: { status: PENDING }
+
+  - id: RED_FLAG_ELECTRICAL_CORD
+    items: [ANY]
+    when: { flag: CHEWED_ELECTRICAL_CORD }
+    level: GO_NOW
+    redFlag: true
+    caseIds: [RF8]
+    reason: URGENT_SIGN_REPORTED
+    steps: [{ code: SEEK_URGENT_VETERINARY_CARE }]
+    sources: [CORNELL_ER]
+    review: { status: PENDING }
+
+  - id: RED_FLAG_HEATSTROKE_SIGNS
+    items: [ANY]
+    when: { flag: HEATSTROKE_SIGNS }
+    level: GO_NOW
+    redFlag: true
+    caseIds: [RF9]
+    reason: URGENT_SIGN_REPORTED
+    steps: [{ code: SEEK_URGENT_VETERINARY_CARE }]
+    sources: [CORNELL_ER]
+    review: { status: PENDING }
+
+  - id: RED_FLAG_TRAUMA_WITH_PAIN
+    items: [ANY]
+    when: { flag: TRAUMA_WITH_PAIN_OR_NOT_USING_LEG }
+    level: GO_NOW
+    redFlag: true
+    caseIds: [RF10, M3b]
+    reason: URGENT_SIGN_REPORTED
+    steps: [{ code: SEEK_URGENT_VETERINARY_CARE }]
+    sources: [CORNELL_ER]
+    review: { status: PENDING }
+
+  - id: RED_FLAG_PROLONGED_OR_REPEAT_SEIZURE
+    items: [ANY]
+    when: { flag: SEIZURE_OVER_FIVE_MINUTES_OR_REPEATED }
+    level: GO_NOW
+    redFlag: true
+    caseIds: [RF11]
+    reason: URGENT_SIGN_REPORTED
+    steps: [{ code: SEEK_URGENT_VETERINARY_CARE_AND_CALL_AHEAD }]
+    sources: [CORNELL_ER, VEG_PUPPY_EMERGENCIES]
+    review: { status: PENDING }
+
+  - id: TOXIN_CHOCOLATE
+    items: [ATE_SOMETHING]
+    when: { substance: CHOCOLATE }
+    level: GO_NOW
+    caseIds: [E10, J5]
+    reason: POSSIBLE_TOXIN_INGESTION
+    steps: [{ code: NOTE_TIME_AND_AMOUNT }, { code: BRING_PACKAGING }]
+    sources: [EPIC_12]
+    review: { status: PENDING }
+
+  - id: TOXIN_GRAPES_OR_RAISINS
+    items: [ATE_SOMETHING]
+    when: { substance: GRAPES_RAISINS }
+    level: GO_NOW
+    caseIds: [E13]
+    reason: POSSIBLE_TOXIN_INGESTION
+    steps: [{ code: NOTE_TIME_AND_AMOUNT }, { code: BRING_PACKAGING }]
+    sources: [EPIC_12]
+    review: { status: PENDING }
+
+  - id: TOXIN_XYLITOL
+    items: [ATE_SOMETHING]
+    when: { substance: XYLITOL }
+    level: GO_NOW
+    caseIds: [E11, E12]
+    reason: POSSIBLE_TOXIN_INGESTION
+    steps: [{ code: NOTE_TIME_AND_AMOUNT }, { code: BRING_PACKAGING }]
+    sources: [MERCK_XYLITOL]
+    review: { status: PENDING }
+
+  - id: TOXIN_MEDICINE
+    items: [ATE_SOMETHING]
+    when: { substance: MEDICINE }
+    level: GO_NOW
+    caseIds: [E15]
+    reason: POSSIBLE_TOXIN_INGESTION
+    steps: [{ code: NOTE_TIME_AND_AMOUNT }, { code: BRING_PACKAGING }]
+    sources: [EPIC_12]
+    review: { status: PENDING }
+
+  - id: UNKNOWN_INGESTED_SUBSTANCE
+    items: [ATE_SOMETHING]
+    when: { substance: OTHER }
+    level: GO_NOW
+    caseIds: [E14]
+    reason: POSSIBLE_TOXIN_INGESTION
+    steps: [{ code: NOTE_TIME_AND_AMOUNT }, { code: BRING_PACKAGING }]
+    sources: [EPIC_12]
+    review: { status: PENDING }
+
+  - id: SWALLOWED_OBJECT
+    items: [ATE_SOMETHING]
+    when: { substance: OBJECT }
+    level: GO_NOW
+    caseIds: [T28, T29]
+    reason: SWALLOWED_OBJECT_REPORTED
+    steps: [{ code: SEEK_URGENT_VETERINARY_CARE }]
+    sources: [VEG_PUPPY_EMERGENCIES, CORNELL_ER]
+    review: { status: PENDING }

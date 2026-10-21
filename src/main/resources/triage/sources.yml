@@ -1,0 +1,58 @@
+sources:
+  - id: EPIC_12
+    title: Is this normal? product epic
+    url: null
+  - id: AKC_HEALTHY_PUPPY
+    title: Is my puppy healthy?
+    url: https://www.akc.org/expert-advice/health/is-my-puppy-healthy/
+  - id: AKC_HYPOGLYCEMIA
+    title: Hypoglycemia in dogs
+    url: https://www.akc.org/expert-advice/health/hypoglycemia-in-dogs/
+  - id: AKC_COMMON_ILLNESSES
+    title: Common puppy illnesses
+    url: https://www.akc.org/expert-advice/health/common-puppy-illnesses-to-know/
+  - id: AKC_KENNEL_COUGH
+    title: Kennel cough in dogs
+    url: https://www.akc.org/expert-advice/health/kennel-cough-in-dogs/
+  - id: AKC_TEETHING
+    title: Puppy teething timeline
+    url: https://www.akc.org/expert-advice/puppy-information/timeline-of-puppy-teething/
+  - id: AKC_PUPPY_VULNERABILITY
+    title: Puppy vulnerability
+    url: https://www.akc.org/expert-advice/health/puppy-vulnerability-a-few-things-to-know-about-your-new-dog/
+  - id: CORNELL_ER
+    title: When to go to the ER
+    url: https://riney.vet.cornell.edu/member-benefits-health-tips/when-to-go-to-the-er-june-2025
+  - id: PETMD_VOMITING_DIARRHEA
+    title: Vomiting and diarrhea in puppies
+    url: https://www.petmd.com/dog/symptoms/vomiting-and-diarrhea-puppies
+  - id: PETMD_DIARRHEA
+    title: Puppy diarrhea
+    url: https://www.petmd.com/dog/symptoms/puppy-diarrhea
+  - id: PETMD_REVERSE_SNEEZING
+    title: Reverse sneezing in dogs
+    url: https://www.petmd.com/dog/general-health/reverse-sneezing-in-dogs
+  - id: VCA_VACCINE_CARE
+    title: Care after vaccination
+    url: https://vcahospitals.com/know-your-pet/care-for-your-pet-after-vaccination
+  - id: VCA_BLOAT
+    title: Bloat in dogs
+    url: https://vcahospitals.com/know-your-pet/bloat-gastric-dilatation-and-volvulus-in-dogs
+  - id: MERCK_XYLITOL
+    title: Xylitol toxicosis in dogs
+    url: https://www.merckvetmanual.com/toxicology/food-hazards/xylitol-toxicosis-in-dogs
+  - id: VEG_PUPPY_EMERGENCIES
+    title: Common puppy emergencies
+    url: https://www.veg.com/post/common-puppy-emergencies-diarrhea-fever-and-more
+  - id: WEBVET_PARVO_SYMPTOMS
+    title: Parvo symptoms in dogs
+    url: https://www.webvet.com/parvo-symptoms-in-dogs/
+  - id: PETPLACE_PUPPY_BEHAVIOUR
+    title: Puppy behaviours that worry owners
+    url: https://www.petplace.com/article/general/pet-behavior-training/15-puppy-kitten-behaviors-that-worry-owners
+  - id: MUDDY_PAWS_BEHAVIOUR
+    title: Is this normal canine behavior?
+    url: https://www.muddypawsrescue.org/news/is-this-normal-canine-behavior
+  - id: PET_HEALTH_CLUB_PUPPY
+    title: Questions every new puppy owner asks
+    url: https://www.pethealthclub.com/uk/pet-advice/questions-every-new-puppy-owner-asks

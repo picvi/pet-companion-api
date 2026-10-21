@@ -1,0 +1,150 @@
+{
+  "date": "2026-10-15",
+  "state": "WATCH",
+  "headline": {
+    "sign": "POO",
+    "kind": "LOOSE_STOOL",
+    "detail": null,
+    "count": 4,
+    "from": "2026-10-11",
+    "lastOn": "2026-10-13"
+  },
+  "note": {
+    "code": "GETTING_BETTER",
+    "sign": "POO"
+  },
+  "signs": [
+    {
+      "sign": "EATING",
+      "state": "USUAL",
+      "watch": null
+    },
+    {
+      "sign": "POO",
+      "state": "WATCH",
+      "watch": {
+        "kind": "LOOSE_STOOL",
+        "detail": null,
+        "count": 4,
+        "from": "2026-10-11",
+        "to": "2026-10-13",
+        "lastOn": "2026-10-13",
+        "lastMinute": 550,
+        "normalSince": "2026-10-14"
+      }
+    },
+    {
+      "sign": "ENERGY",
+      "state": "USUAL",
+      "watch": null
+    },
+    {
+      "sign": "SLEEP",
+      "state": "NO_DATA",
+      "watch": null
+    },
+    {
+      "sign": "VOMIT",
+      "state": "WATCH",
+      "watch": {
+        "kind": "SYMPTOM",
+        "detail": "VOMITING",
+        "count": 1,
+        "from": "2026-10-12",
+        "to": "2026-10-12",
+        "lastOn": "2026-10-12",
+        "lastMinute": 1200,
+        "normalSince": null
+      }
+    }
+  ],
+  "foodChange": {
+    "state": "RUNNING",
+    "startedOn": "2026-10-10"
+  },
+  "weight": {
+    "grams": 12400,
+    "on": "2026-10-13",
+    "previousGrams": 12100,
+    "previousOn": "2026-09-15"
+  },
+  "lastMedicine": {
+    "label": "Bravecto",
+    "dose": "1 tab",
+    "on": "2026-10-12"
+  },
+  "diary": [
+    {
+      "id": "0199a1e2-7c3b-7a10-8e55-3f0c2d9a41c1",
+      "clientId": "0199a1e2-7c3a-7f00-9a2d-5b6c1e0d8a41",
+      "type": "SYMPTOM",
+      "detail": "VOMITING",
+      "amountGrams": null,
+      "localDate": "2026-10-12",
+      "minuteOfDay": 1200,
+      "occurredAt": "2026-10-12T18:00:00Z",
+      "utcOffsetMinutes": 120,
+      "accident": null,
+      "stoolScore": null,
+      "flags": [],
+      "weightGrams": null,
+      "durationMinutes": null,
+      "wellbeing": null,
+      "label": null,
+      "dose": null,
+      "note": null,
+      "loggedBy": "0199a1e2-7c3b-7a10-8e55-3f0c2d9a4100",
+      "createdAt": "2026-10-12T18:00:00Z",
+      "updatedAt": null,
+      "foods": []
+    },
+    {
+      "id": "0199a1e2-7c3b-7a10-8e55-3f0c2d9a41c2",
+      "clientId": "0199a1e2-7c3a-7f00-9a2d-5b6c1e0d8a42",
+      "type": "TOILET",
+      "detail": "POO",
+      "amountGrams": null,
+      "localDate": "2026-10-13",
+      "minuteOfDay": 550,
+      "occurredAt": "2026-10-13T07:10:00Z",
+      "utcOffsetMinutes": 120,
+      "accident": false,
+      "stoolScore": 6,
+      "flags": ["MUCUS"],
+      "weightGrams": null,
+      "durationMinutes": null,
+      "wellbeing": null,
+      "label": null,
+      "dose": null,
+      "note": null,
+      "loggedBy": "0199a1e2-7c3b-7a10-8e55-3f0c2d9a4100",
+      "createdAt": "2026-10-13T07:10:00Z",
+      "updatedAt": null,
+      "foods": []
+    },
+    {
+      "id": "0199a1e2-7c3b-7a10-8e55-3f0c2d9a41c3",
+      "clientId": "0199a1e2-7c3a-7f00-9a2d-5b6c1e0d8a43",
+      "type": "MEDICINE",
+      "detail": null,
+      "amountGrams": null,
+      "localDate": "2026-10-12",
+      "minuteOfDay": 480,
+      "occurredAt": "2026-10-12T06:00:00Z",
+      "utcOffsetMinutes": 120,
+      "accident": null,
+      "stoolScore": null,
+      "flags": [],
+      "weightGrams": null,
+      "durationMinutes": null,
+      "wellbeing": null,
+      "label": "Bravecto",
+      "dose": "1 tab",
+      "note": null,
+      "loggedBy": "0199a1e2-7c3b-7a10-8e55-3f0c2d9a4100",
+      "createdAt": "2026-10-12T06:00:00Z",
+      "updatedAt": null,
+      "foods": []
+    }
+  ]
+}

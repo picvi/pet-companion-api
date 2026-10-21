@@ -1,0 +1,7 @@
+spring:
+  jpa:
+    show-sql: false
+
+pawstep:
+  triage:
+    require-reviewed: false

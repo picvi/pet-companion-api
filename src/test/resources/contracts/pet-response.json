@@ -1,0 +1,13 @@
+{
+  "id": "6b0f6a52-6d3c-4c1e-9d0e-2f1d3c4b5a69",
+  "name": "Mila",
+  "sex": "FEMALE",
+  "birthDate": "2026-07-30",
+  "neutered": false,
+  "microchipNumber": "616093900004821",
+  "ownerId": "0d9c1f3e-7b8a-4c2d-9e1f-2a3b4c5d6e7f",
+  "breedId": 12,
+  "breedCode": "POODLE_TOY",
+  "vaccinationStatus": "FIRST_DOSE",
+  "sizeCategory": "SMALL"
+}

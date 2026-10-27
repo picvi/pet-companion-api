@@ -3,8 +3,11 @@ package com.picvi.pet_companion_service.auth.service;
 import com.picvi.pet_companion_service.auth.dto.LoginRequest;
 import com.picvi.pet_companion_service.auth.dto.LoginResponse;
 import com.picvi.pet_companion_service.auth.dto.RegisterRequest;
+import com.picvi.pet_companion_service.auth.dto.RegisterResponse;
 import com.picvi.pet_companion_service.auth.dto.UserResponse;
+import com.picvi.pet_companion_service.exception.EmailNotVerified;
 import com.picvi.pet_companion_service.exception.InvalidRefreshToken;
+import com.picvi.pet_companion_service.exception.InvalidVerificationCode;
 import com.picvi.pet_companion_service.exception.PasswordIncorrect;
 import com.picvi.pet_companion_service.exception.UserAlreadyExistsException;
 import com.picvi.pet_companion_service.exception.UserDoesNotExist;
@@ -12,6 +15,7 @@ import com.picvi.pet_companion_service.pet.repository.PetRepository;
 import com.picvi.pet_companion_service.user.entity.User;
 import com.picvi.pet_companion_service.user.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,17 +30,50 @@ public class AuthService {
     private final PetRepository petRepository;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final EmailVerificationService emailVerificationService;
 
+    /** Off only for local debugging (see application.yml); the prod profile forces it on. */
+    @Value("${pawstep.auth.email-verification-required:true}")
+    private boolean emailVerificationRequired = true;
+
+    /**
+     * An email that is already verified gets the same answer as a fresh sign-up, so the endpoint does not reveal who has an account.
+     * An unverified one is taken over by the newest sign-up, but only when a new code really goes out, so the credentials
+     * and the code in the mailbox always belong to the same request.
+     */
     @Transactional
-    public LoginResponse register(RegisterRequest request) {
-        this.validateUsernameAndEmailAvailable(request.username(), request.email());
+    public RegisterResponse register(RegisterRequest request) {
+        String email = EmailAddress.normalise(request.email());
+        String passwordHash = this.passwordEncoder.encode(request.password());
+        User owner = this.usersRepository.findByEmail(email).orElse(null);
+        User sameUsername = this.usersRepository.findByUsername(request.username());
+
+        if (sameUsername != null && (owner == null || !sameUsername.getId().equals(owner.getId()))) {
+            throw new UserAlreadyExistsException("Username already exists", "USERNAME_ALREADY_EXISTS");
+        }
+        if (owner != null) {
+            if (!this.emailVerificationRequired) {
+                throw new UserAlreadyExistsException("Email already exists", "USER_EMAIL_ALREADY_EXISTS");
+            }
+            if (!owner.isEmailVerified() && this.emailVerificationService.canSend(owner)) {
+                owner.setUsername(request.username());
+                owner.setPassword_hash(passwordHash);
+                this.emailVerificationService.sendVerification(owner);
+            }
+            return new RegisterResponse(email, true);
+        }
 
         User user = new User();
-        user.setPassword_hash(this.passwordEncoder.encode(request.password()));
+        user.setPassword_hash(passwordHash);
         user.setUsername(request.username());
-        user.setEmail(request.email());
+        user.setEmail(email);
+        user.setEmailVerified(!this.emailVerificationRequired);
 
-        return this.buildAuthResponse(this.usersRepository.save(user));
+        User saved = this.usersRepository.save(user);
+        if (this.emailVerificationRequired) {
+            this.emailVerificationService.sendVerification(saved);
+        }
+        return new RegisterResponse(saved.getEmail(), this.emailVerificationRequired);
     }
 
     @Transactional
@@ -49,8 +86,17 @@ public class AuthService {
         if (!this.passwordEncoder.matches(request.password(), user.getPassword_hash())) {
             throw new PasswordIncorrect();
         }
+        if (!user.isEmailVerified()) {
+            throw new EmailNotVerified(user.getEmail());
+        }
 
         return this.buildAuthResponse(user);
+    }
+
+    /** A correct code proves the mailbox, so the user gets a session right away. Wrong guesses are counted and kept. */
+    @Transactional(noRollbackFor = InvalidVerificationCode.class)
+    public LoginResponse verifyEmail(String email, String code) {
+        return this.buildAuthResponse(this.emailVerificationService.verify(email, code));
     }
 
     @Transactional(noRollbackFor = InvalidRefreshToken.class)
@@ -84,15 +130,5 @@ public class AuthService {
     private UserResponse toUserResponse(User user) {
         boolean hasPet = this.petRepository.existsByOwnerId(user.getId());
         return new UserResponse(user.getId(), user.getUsername(), user.getEmail(), hasPet);
-    }
-
-    private void validateUsernameAndEmailAvailable(String userName, String email) {
-        if (this.usersRepository.existsByUsername(userName)) {
-            throw new UserAlreadyExistsException("Username already exists", "USERNAME_ALREADY_EXISTS");
-        }
-
-        if (this.usersRepository.existsByEmail(email)) {
-            throw new UserAlreadyExistsException("Email already exists", "USER_EMAIL_ALREADY_EXISTS");
-        }
     }
 }

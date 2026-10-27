@@ -69,7 +69,7 @@ class FoodDigestServiceTest {
         int listed = this.service.sendPending(TO);
 
         assertThat(listed).isEqualTo(3);
-        verify(this.mailer).send(eq(TO), eq("Pawstep: 1 new owner-added food"), org.mockito.ArgumentMatchers.contains("x3  Karma od hodowcy"));
+        verify(this.mailer).send(eq(TO), eq("curl up: 1 new owner-added food"), org.mockito.ArgumentMatchers.contains("x3  Karma od hodowcy"));
         assertThat(products).allSatisfy(product -> assertThat(product.getNotifiedAt()).isNotNull());
     }
 

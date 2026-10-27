@@ -65,7 +65,7 @@ class FoodDigestFormatterTest {
         List<DigestEntry> two = this.formatter.entries(List.of(
                 input(UUID.randomUUID(), "A", ProteinStatus.KNOWN, IngredientCode.CHICKEN), input(UUID.randomUUID(), "B", ProteinStatus.KNOWN, IngredientCode.CHICKEN)));
 
-        assertThat(this.formatter.subject(two)).isEqualTo("Pawstep: 2 new owner-added foods");
-        assertThat(this.formatter.subject(two.subList(0, 1))).isEqualTo("Pawstep: 1 new owner-added food");
+        assertThat(this.formatter.subject(two)).isEqualTo("curl up: 2 new owner-added foods");
+        assertThat(this.formatter.subject(two.subList(0, 1))).isEqualTo("curl up: 1 new owner-added food");
     }
 }

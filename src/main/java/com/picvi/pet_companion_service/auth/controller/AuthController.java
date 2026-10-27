@@ -4,8 +4,12 @@ import com.picvi.pet_companion_service.auth.dto.LoginRequest;
 import com.picvi.pet_companion_service.auth.dto.LoginResponse;
 import com.picvi.pet_companion_service.auth.dto.RefreshTokenRequest;
 import com.picvi.pet_companion_service.auth.dto.RegisterRequest;
+import com.picvi.pet_companion_service.auth.dto.RegisterResponse;
+import com.picvi.pet_companion_service.auth.dto.ResendVerificationRequest;
+import com.picvi.pet_companion_service.auth.dto.VerifyEmailRequest;
 import com.picvi.pet_companion_service.auth.dto.UserResponse;
 import com.picvi.pet_companion_service.auth.service.AuthService;
+import com.picvi.pet_companion_service.auth.service.EmailVerificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,11 +23,23 @@ import java.util.UUID;
 @RequestMapping("/auth")
 public class AuthController {
     private final AuthService authService;
+    private final EmailVerificationService emailVerificationService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public LoginResponse register(@Valid @RequestBody RegisterRequest request) {
+    public RegisterResponse register(@Valid @RequestBody RegisterRequest request) {
         return this.authService.register(request);
+    }
+
+    @PostMapping("/verify-email")
+    public LoginResponse verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        return this.authService.verifyEmail(request.email(), request.code());
+    }
+
+    @PostMapping("/resend-verification")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
+        this.emailVerificationService.resend(request.email());
     }
 
     @PostMapping("/login")

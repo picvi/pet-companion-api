@@ -9,6 +9,11 @@ springdoc:
     enabled: false
 
 pawstep:
+  rate-limit:
+    trust-forwarded-for: true
+  auth:
+    email-verification-required: true
+    log-codes: false
   triage:
     require-reviewed: true
 

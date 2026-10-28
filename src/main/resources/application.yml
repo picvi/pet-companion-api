@@ -7,6 +7,11 @@ spring:
   jpa:
     show-sql: true
 
+  mail:
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
   jwt:
     secret: ${JWT_SECRET}
     access-token-expiration: 15m
@@ -16,3 +21,14 @@ pawstep:
   admin:
     # comma-separated; the daily food digest goes here. Mail itself is set with spring.mail.* (SPRING_MAIL_HOST, ...).
     emails: ${PAWSTEP_ADMIN_EMAILS:}
+
+  auth:
+    mail-from: ${PAWSTEP_MAIL_FROM:}
+    # Debug default: sign-ups are verified at once and no mail is sent. application-prod.yml forces it back on.
+    email-verification-required: false
+    log-codes: true
+  rate-limit:
+    # In memory and per server; client IP comes from X-Forwarded-For set by Caddy.
+    enabled: true
+    # Read the client IP from X-Forwarded-For. Only safe behind a proxy that appends it and with the app port closed to the outside.
+    trust-forwarded-for: false

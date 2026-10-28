@@ -3,6 +3,8 @@ package com.picvi.pet_companion_service.auth.service;
 import com.picvi.pet_companion_service.auth.dto.LoginRequest;
 import com.picvi.pet_companion_service.auth.dto.LoginResponse;
 import com.picvi.pet_companion_service.auth.dto.RegisterRequest;
+import com.picvi.pet_companion_service.auth.dto.RegisterResponse;
+import com.picvi.pet_companion_service.exception.EmailNotVerified;
 import com.picvi.pet_companion_service.exception.PasswordIncorrect;
 import com.picvi.pet_companion_service.exception.UserAlreadyExistsException;
 import com.picvi.pet_companion_service.exception.UserDoesNotExist;
@@ -10,6 +12,7 @@ import com.picvi.pet_companion_service.pet.repository.PetRepository;
 import com.picvi.pet_companion_service.user.entity.User;
 import com.picvi.pet_companion_service.user.repository.UsersRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -17,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,35 +44,128 @@ class AuthServiceTest {
     private JwtService jwtService;
     @Mock
     private RefreshTokenService refreshTokenService;
+    @Mock
+    private EmailVerificationService emailVerificationService;
     @InjectMocks
     private AuthService authService;
 
     @Test
-    void registerStoresHashedPasswordAndReturnsTokens() {
-        when(usersRepository.existsByUsername("viki")).thenReturn(false);
-        when(usersRepository.existsByEmail("viki@example.com")).thenReturn(false);
+    void registerStoresUnverifiedUserAndSendsVerification() {
+        when(usersRepository.findByEmail("viki@example.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("secret123")).thenReturn("hash");
         when(usersRepository.save(any(User.class))).thenAnswer(invocation -> withId(invocation.getArgument(0)));
-        when(jwtService.generateToken(any(User.class))).thenReturn("access");
-        when(refreshTokenService.issue(any(User.class))).thenReturn("refresh");
+
+        RegisterResponse response = authService.register(new RegisterRequest("viki", "viki@example.com", "secret123"));
+
+        assertThat(response.email()).isEqualTo("viki@example.com");
+        assertThat(response.verificationRequired()).isTrue();
+        verify(emailVerificationService).sendVerification(any(User.class));
+        verify(refreshTokenService, never()).issue(any(User.class));
+    }
+
+    @Test
+    void registerLowercasesEmail() {
+        when(usersRepository.findByEmail("viki@example.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("secret123")).thenReturn("hash");
+        when(usersRepository.save(any(User.class))).thenAnswer(invocation -> withId(invocation.getArgument(0)));
+
+        RegisterResponse response = authService.register(new RegisterRequest("viki", "Viki@Example.COM", "secret123"));
+
+        assertThat(response.email()).isEqualTo("viki@example.com");
+    }
+
+    @Test
+    void registerInDebugModeVerifiesAtOnceAndSendsNoCode() {
+        ReflectionTestUtils.setField(authService, "emailVerificationRequired", false);
+        when(passwordEncoder.encode("secret123")).thenReturn("hash");
+        when(usersRepository.save(any(User.class))).thenAnswer(invocation -> withId(invocation.getArgument(0)));
+
+        RegisterResponse response = authService.register(new RegisterRequest("viki", "viki@example.com", "secret123"));
+
+        assertThat(response.verificationRequired()).isFalse();
+        verify(emailVerificationService, never()).sendVerification(any(User.class));
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+        verify(usersRepository).save(saved.capture());
+        assertThat(saved.getValue().isEmailVerified()).isTrue();
+    }
+
+    @Test
+    void verifyEmailLogsTheUserIn() {
+        User user = existingUser();
+        when(emailVerificationService.verify("viki@example.com", "123456")).thenReturn(user);
+        when(jwtService.generateToken(user)).thenReturn("access");
+        when(refreshTokenService.issue(user)).thenReturn("refresh");
         when(petRepository.existsByOwnerId(USER_ID)).thenReturn(false);
 
-        LoginResponse response = authService.register(new RegisterRequest("viki", "viki@example.com", "secret123"));
+        LoginResponse response = authService.verifyEmail("viki@example.com", "123456");
 
         assertThat(response.accessToken()).isEqualTo("access");
         assertThat(response.refreshToken()).isEqualTo("refresh");
-        assertThat(response.user().id()).isEqualTo(USER_ID);
-        assertThat(response.user().hasPet()).isFalse();
+        assertThat(response.user().email()).isEqualTo("viki@example.com");
+    }
+
+    @Test
+    void loginRejectsUnverifiedEmail() {
+        User user = existingUser();
+        user.setEmailVerified(false);
+        when(usersRepository.findByUsername("viki")).thenReturn(user);
+        when(passwordEncoder.matches("secret123", "hash")).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("viki", "secret123")))
+                .isInstanceOfSatisfying(EmailNotVerified.class,
+                        e -> assertThat(e.getEmail()).isEqualTo("viki@example.com"));
+        verify(refreshTokenService, never()).issue(any(User.class));
     }
 
     @Test
     void registerRejectsTakenUsername() {
-        when(usersRepository.existsByUsername("viki")).thenReturn(true);
+        when(usersRepository.findByEmail("viki@example.com")).thenReturn(Optional.empty());
+        when(usersRepository.findByUsername("viki")).thenReturn(existingUser());
 
         assertThatThrownBy(() -> authService.register(new RegisterRequest("viki", "viki@example.com", "secret123")))
                 .isInstanceOf(UserAlreadyExistsException.class)
                 .hasMessage("Username already exists");
         verify(usersRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void registerWithVerifiedEmailLooksLikeASignUpButCreatesNothing() {
+        when(usersRepository.findByEmail("viki@example.com")).thenReturn(Optional.of(existingUser()));
+
+        RegisterResponse response = authService.register(new RegisterRequest("other", "viki@example.com", "secret123"));
+
+        assertThat(response.verificationRequired()).isTrue();
+        verify(usersRepository, never()).save(any(User.class));
+        verify(emailVerificationService, never()).sendVerification(any(User.class));
+    }
+
+    @Test
+    void registerTakesOverUnverifiedAccountOnlyWhenANewCodeGoesOut() {
+        User pending = existingUser();
+        pending.setEmailVerified(false);
+        when(usersRepository.findByEmail("viki@example.com")).thenReturn(Optional.of(pending));
+        when(passwordEncoder.encode("newsecret1")).thenReturn("newhash");
+        when(emailVerificationService.canSend(pending)).thenReturn(true);
+
+        authService.register(new RegisterRequest("viki2", "viki@example.com", "newsecret1"));
+
+        assertThat(pending.getUsername()).isEqualTo("viki2");
+        assertThat(pending.getPassword_hash()).isEqualTo("newhash");
+        verify(emailVerificationService).sendVerification(pending);
+    }
+
+    @Test
+    void registerKeepsCredentialsOfUnverifiedAccountWhileTheCodeIsThrottled() {
+        User pending = existingUser();
+        pending.setEmailVerified(false);
+        when(usersRepository.findByEmail("viki@example.com")).thenReturn(Optional.of(pending));
+        when(emailVerificationService.canSend(pending)).thenReturn(false);
+
+        authService.register(new RegisterRequest("viki2", "viki@example.com", "newsecret1"));
+
+        assertThat(pending.getUsername()).isEqualTo("viki");
+        assertThat(pending.getPassword_hash()).isEqualTo("hash");
+        verify(emailVerificationService, never()).sendVerification(any(User.class));
     }
 
     @Test
@@ -111,6 +208,7 @@ class AuthServiceTest {
         user.setUsername("viki");
         user.setEmail("viki@example.com");
         user.setPassword_hash("hash");
+        user.setEmailVerified(true);
         return withId(user);
     }
 

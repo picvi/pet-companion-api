@@ -40,6 +40,11 @@ public class User {
     @Column(nullable = false)
     private UserRole role = UserRole.USER;
 
+    @Getter
+    @Setter
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
     @CreatedDate
     @Column(updatable = false)
     private Instant created_at;

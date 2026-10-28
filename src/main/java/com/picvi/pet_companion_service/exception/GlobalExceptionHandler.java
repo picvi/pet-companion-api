@@ -1,5 +1,6 @@
 package com.picvi.pet_companion_service.exception;
 
+import com.picvi.pet_companion_service.dto.EmailNotVerifiedResponse;
 import com.picvi.pet_companion_service.dto.ErrorResponse;
 import com.picvi.pet_companion_service.exception.account.CurrentPasswordIncorrect;
 import com.picvi.pet_companion_service.exception.account.PasswordUnchanged;
@@ -91,6 +92,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PasswordIncorrect.class)
     public ResponseEntity<ErrorResponse> handlePasswordIncorrect(PasswordIncorrect ex) {
         return error(HttpStatus.UNAUTHORIZED, ex);
+    }
+
+    @ExceptionHandler(EmailNotVerified.class)
+    public ResponseEntity<EmailNotVerifiedResponse> handleEmailNotVerified(EmailNotVerified ex) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new EmailNotVerifiedResponse(HttpStatus.FORBIDDEN.value(), ex.getCode(), ex.getMessage(), ex.getEmail()));
+    }
+
+    @ExceptionHandler(InvalidVerificationCode.class)
+    public ResponseEntity<ErrorResponse> handleInvalidVerificationCode(InvalidVerificationCode ex) {
+        return error(HttpStatus.BAD_REQUEST, ex);
     }
 
     @ExceptionHandler(InvalidRefreshToken.class)

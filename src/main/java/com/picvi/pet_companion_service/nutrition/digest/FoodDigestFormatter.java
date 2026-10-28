@@ -34,7 +34,7 @@ public class FoodDigestFormatter {
     }
 
     public String subject(List<DigestEntry> entries) {
-        return "Pawstep: " + entries.size() + (entries.size() == 1 ? " new owner-added food" : " new owner-added foods");
+        return "curl up: " + entries.size() + (entries.size() == 1 ? " new owner-added food" : " new owner-added foods");
     }
 
     public String body(List<DigestEntry> entries) {

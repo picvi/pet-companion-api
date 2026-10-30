@@ -13,6 +13,7 @@ import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
 import com.picvi.pet_companion_service.nutrition.domain.FoodProductRules;
 import com.picvi.pet_companion_service.nutrition.domain.IngredientCode;
 import com.picvi.pet_companion_service.nutrition.domain.IngredientRole;
+import com.picvi.pet_companion_service.nutrition.domain.LifeStage;
 import com.picvi.pet_companion_service.nutrition.domain.ProductStatus;
 import com.picvi.pet_companion_service.nutrition.domain.ProteinStatus;
 import com.picvi.pet_companion_service.nutrition.dto.AddFoodProductRequest;
@@ -83,30 +84,39 @@ class FoodCatalogueServiceTest {
 
     @Test
     void searchTurnsEachWordIntoAnAccentFreeLikePattern() {
-        when(this.productRepository.search(eq(USER), eq(null), anyString(), anyString(), anyInt(), anyInt())).thenReturn(List.of());
+        when(this.productRepository.search(eq(USER), eq(null), eq(null), eq(null), anyString(), anyString(), anyInt(), anyInt())).thenReturn(List.of());
 
-        this.service.search(USER, "  Brit  PUPPY kaczką ", null, null, null);
+        this.service.search(USER, "  Brit  PUPPY kaczką ", null, null, null, null, null);
 
-        verify(this.productRepository).search(USER, null, "brit puppy kaczka", "%brit%,%puppy%,%kaczka%", 21, 0);
+        verify(this.productRepository).search(USER, null, null, null, "brit puppy kaczka", "%brit%,%puppy%,%kaczka%", 21, 0);
+    }
+
+    @Test
+    void formAndLifeStageFiltersArePassedToTheQuery() {
+        when(this.productRepository.search(any(), any(), any(), any(), anyString(), anyString(), anyInt(), anyInt())).thenReturn(List.of());
+
+        this.service.search(USER, "", FoodKind.MAIN, FoodForm.WET, LifeStage.PUPPY, null, null);
+
+        verify(this.productRepository).search(USER, "MAIN", "WET", "PUPPY", "", "", 21, 0);
     }
 
     @Test
     void emptyQueryHasNoTextFilter() {
-        when(this.productRepository.search(eq(USER), eq("TREAT"), anyString(), anyString(), anyInt(), anyInt())).thenReturn(List.of());
+        when(this.productRepository.search(eq(USER), eq("TREAT"), eq(null), eq(null), anyString(), anyString(), anyInt(), anyInt())).thenReturn(List.of());
 
-        this.service.search(USER, "", FoodKind.TREAT, null, null);
+        this.service.search(USER, "", FoodKind.TREAT, null, null, null, null);
 
-        verify(this.productRepository).search(USER, "TREAT", "", "", 21, 0);
+        verify(this.productRepository).search(USER, "TREAT", null, null, "", "", 21, 0);
     }
 
     @Test
     void searchReturnsNextCursorOnlyWhenThereIsAnotherPage() {
         List<FoodProduct> three = List.of(this.product("a"), this.product("b"), this.product("c"));
-        when(this.productRepository.search(any(), any(), anyString(), anyString(), eq(3), eq(0))).thenReturn(three);
-        when(this.productRepository.search(any(), any(), anyString(), anyString(), eq(3), eq(2))).thenReturn(three.subList(0, 1));
+        when(this.productRepository.search(any(), any(), any(), any(), anyString(), anyString(), eq(3), eq(0))).thenReturn(three);
+        when(this.productRepository.search(any(), any(), any(), any(), anyString(), anyString(), eq(3), eq(2))).thenReturn(three.subList(0, 1));
 
-        FoodProductsResponse first = this.service.search(USER, "x", null, null, 2);
-        FoodProductsResponse second = this.service.search(USER, "x", null, first.nextCursor(), 2);
+        FoodProductsResponse first = this.service.search(USER, "x", null, null, null, null, 2);
+        FoodProductsResponse second = this.service.search(USER, "x", null, null, null, first.nextCursor(), 2);
 
         assertThat(first.items()).hasSize(2);
         assertThat(first.nextCursor()).isEqualTo("2");
@@ -117,12 +127,12 @@ class FoodCatalogueServiceTest {
     @Test
     void searchAttachesIngredientsToEachProduct() {
         FoodProduct brit = this.product("Puppy Salmon");
-        when(this.productRepository.search(any(), any(), anyString(), anyString(), anyInt(), anyInt())).thenReturn(List.of(brit));
+        when(this.productRepository.search(any(), any(), any(), any(), anyString(), anyString(), anyInt(), anyInt())).thenReturn(List.of(brit));
         when(this.ingredientRepository.findAllByProductIdIn(any())).thenReturn(List.of(
                 new FoodProductIngredient(brit.getId(), "RICE", IngredientRole.OTHER, false),
                 new FoodProductIngredient(brit.getId(), "SALMON", IngredientRole.MAIN, false)));
 
-        FoodProductsResponse response = this.service.search(USER, "brit puppy salmon", null, null, null);
+        FoodProductsResponse response = this.service.search(USER, "brit puppy salmon", null, null, null, null, null);
 
         assertThat(response.items().get(0).ingredients())
                 .extracting(IngredientDto::code, IngredientDto::role)
@@ -132,17 +142,17 @@ class FoodCatalogueServiceTest {
 
     @Test
     void invalidCursorIsRejected() {
-        assertThatThrownBy(() -> this.service.search(USER, "", null, "abc", null)).isInstanceOf(InvalidCursor.class);
-        assertThatThrownBy(() -> this.service.search(USER, "", null, "-1", null)).isInstanceOf(InvalidCursor.class);
+        assertThatThrownBy(() -> this.service.search(USER, "", null, null, null, "abc", null)).isInstanceOf(InvalidCursor.class);
+        assertThatThrownBy(() -> this.service.search(USER, "", null, null, null, "-1", null)).isInstanceOf(InvalidCursor.class);
     }
 
     @Test
     void limitIsClamped() {
-        when(this.productRepository.search(any(), any(), anyString(), anyString(), anyInt(), anyInt())).thenReturn(List.of());
+        when(this.productRepository.search(any(), any(), any(), any(), anyString(), anyString(), anyInt(), anyInt())).thenReturn(List.of());
 
-        this.service.search(USER, "", null, null, 500);
+        this.service.search(USER, "", null, null, null, null, 500);
 
-        verify(this.productRepository).search(USER, null, "", "", 51, 0);
+        verify(this.productRepository).search(USER, null, null, null, "", "", 51, 0);
     }
 
     @Test

@@ -1,7 +1,9 @@
 package com.picvi.pet_companion_service.nutrition.controller;
 
 import com.picvi.pet_companion_service.common.Etags;
+import com.picvi.pet_companion_service.nutrition.domain.FoodForm;
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
+import com.picvi.pet_companion_service.nutrition.domain.LifeStage;
 import com.picvi.pet_companion_service.nutrition.dto.AddFoodProductRequest;
 import com.picvi.pet_companion_service.nutrition.dto.FoodProductDto;
 import com.picvi.pet_companion_service.nutrition.dto.FoodProductsResponse;
@@ -30,9 +32,11 @@ public class FoodCatalogueController {
     public FoodProductsResponse search(@AuthenticationPrincipal UUID userId,
                                        @RequestParam(required = false, defaultValue = "") String q,
                                        @RequestParam(required = false) FoodKind kind,
+                                       @RequestParam(required = false) FoodForm form,
+                                       @RequestParam(required = false) LifeStage lifeStage,
                                        @RequestParam(required = false) String cursor,
                                        @RequestParam(required = false) Integer limit) {
-        return this.catalogueService.search(userId, q, kind, cursor, limit);
+        return this.catalogueService.search(userId, q, kind, form, lifeStage, cursor, limit);
     }
 
     @PostMapping("/food-products")

@@ -16,17 +16,21 @@ public interface FoodProductRepository extends JpaRepository<FoodProduct, UUID> 
     /**
      * PUBLIC products and the caller's own OWNER_ADDED ones. Every word of the query must appear in the product's
      * search text (accent-free, so "kaczką" finds "kaczka"); results are ranked by trigram similarity.
+     * Optional form and life stage filters; a life stage filter also keeps products suited to ALL stages.
      * {@code likePatterns} is a comma-separated list of {@code %word%}; an empty string means no text filter.
      */
     @Query(value = """
             select p.* from food_product p
             where (p.status = 'PUBLIC' or (p.status = 'OWNER_ADDED' and p.created_by = :userId))
               and (cast(:kind as text) is null or p.kind_hint = :kind)
+              and (cast(:form as text) is null or p.form = :form)
+              and (cast(:lifeStage as text) is null or p.life_stage in (:lifeStage, 'ALL'))
               and (:likePatterns = '' or p.search_text like all (string_to_array(:likePatterns, ',')))
             order by word_similarity(:query, p.search_text) desc, p.brand, p.product_name, p.id
             limit :limit offset :offset
             """, nativeQuery = true)
-    List<FoodProduct> search(@Param("userId") UUID userId, @Param("kind") String kind, @Param("query") String query,
+    List<FoodProduct> search(@Param("userId") UUID userId, @Param("kind") String kind, @Param("form") String form,
+                             @Param("lifeStage") String lifeStage, @Param("query") String query,
                              @Param("likePatterns") String likePatterns, @Param("limit") int limit, @Param("offset") int offset);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

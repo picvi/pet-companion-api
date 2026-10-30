@@ -7,6 +7,7 @@ import com.picvi.pet_companion_service.exception.nutrition.InvalidFoodProduct;
 import com.picvi.pet_companion_service.nutrition.domain.AllergyMatch;
 import com.picvi.pet_companion_service.nutrition.domain.AllergyMatcher;
 import com.picvi.pet_companion_service.nutrition.domain.FoodNameNormaliser;
+import com.picvi.pet_companion_service.nutrition.domain.FoodForm;
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
 import com.picvi.pet_companion_service.nutrition.domain.FoodProductRules;
 import com.picvi.pet_companion_service.nutrition.domain.IngredientRole;
@@ -53,7 +54,8 @@ public class FoodCatalogueService {
     private final Clock clock;
 
     @Transactional(readOnly = true)
-    public FoodProductsResponse search(UUID userId, String query, FoodKind kind, String cursor, Integer limit) {
+    public FoodProductsResponse search(UUID userId, String query, FoodKind kind, FoodForm form, LifeStage lifeStage,
+                                      String cursor, Integer limit) {
         int pageSize = limit == null ? DEFAULT_LIMIT : Math.min(Math.max(limit, 1), MAX_LIMIT);
         int offset = TextCursors.parseOffset(cursor);
         String normalised = FoodNameNormaliser.normalise(query);
@@ -61,7 +63,8 @@ public class FoodCatalogueService {
                 .map(word -> "%" + word + "%")
                 .collect(Collectors.joining(","));
 
-        List<FoodProduct> found = this.productRepository.search(userId, kind == null ? null : kind.name(), normalised,
+        List<FoodProduct> found = this.productRepository.search(userId, kind == null ? null : kind.name(),
+                form == null ? null : form.name(), lifeStage == null ? null : lifeStage.name(), normalised,
                 likePatterns, pageSize + 1, offset);
         boolean hasMore = found.size() > pageSize;
         List<FoodProduct> page = hasMore ? found.subList(0, pageSize) : found;

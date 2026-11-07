@@ -46,6 +46,7 @@ import com.picvi.pet_companion_service.nutrition.repository.FoodProductIngredien
 import com.picvi.pet_companion_service.nutrition.repository.ExposureReader;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodTransitionRepository;
+import com.picvi.pet_companion_service.nutrition.repository.PetDietLock;
 import com.picvi.pet_companion_service.nutrition.repository.PetFoodRepository;
 import com.picvi.pet_companion_service.pet.dto.PetProfile;
 import com.picvi.pet_companion_service.pet.service.PetService;
@@ -74,6 +75,7 @@ public class DietService {
 
     private final ClientDateValidator clientDateValidator;
     private final PetService petService;
+    private final PetDietLock dietLock;
     private final RhythmApi rhythmApi;
     private final NutritionApi nutritionApi;
     private final PetFoodRepository foodRepository;
@@ -99,6 +101,7 @@ public class DietService {
     public DietResponse addFood(UUID ownerId, UUID petId, AddPetFoodRequest request) {
         this.clientDateValidator.validate(request.date());
         PetProfile profile = this.petService.getOwnedPetProfile(ownerId, petId);
+        this.dietLock.acquire(petId);
         if (request.clientId() != null && this.foodRepository.findByPetIdAndClientId(petId, request.clientId()).isPresent()) {
             return this.dietFor(profile, request.date());
         }
@@ -167,6 +170,7 @@ public class DietService {
     public DietResponse endFood(UUID ownerId, UUID petId, UUID foodId, LocalDate date) {
         this.clientDateValidator.validate(date);
         PetProfile profile = this.petService.getOwnedPetProfile(ownerId, petId);
+        this.dietLock.acquire(petId);
         PetFood food = this.ownedFood(petId, foodId);
         this.requireNotInRunningChange(petId, food);
         if (food.getStatus() == PetFoodStatus.ACTIVE) {
@@ -180,6 +184,7 @@ public class DietService {
     public DietResponse removeFood(UUID ownerId, UUID petId, UUID foodId, LocalDate date) {
         this.clientDateValidator.validate(date);
         PetProfile profile = this.petService.getOwnedPetProfile(ownerId, petId);
+        this.dietLock.acquire(petId);
         PetFood food = this.ownedFood(petId, foodId);
         this.requireNotInRunningChange(petId, food);
         food.markEnteredInError();

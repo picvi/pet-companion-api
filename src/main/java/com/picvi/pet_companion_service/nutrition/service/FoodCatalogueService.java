@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 public class FoodCatalogueService {
     static final int DEFAULT_LIMIT = 20;
     static final int MAX_LIMIT = 50;
+    static final int MAX_QUERY_WORDS = 6;
 
     private final FoodProductRepository productRepository;
     private final FoodProductIngredientRepository ingredientRepository;
@@ -58,7 +59,10 @@ public class FoodCatalogueService {
                                       String cursor, Integer limit) {
         int pageSize = limit == null ? DEFAULT_LIMIT : Math.min(Math.max(limit, 1), MAX_LIMIT);
         int offset = TextCursors.parseOffset(cursor);
-        String normalised = FoodNameNormaliser.normalise(query);
+        String normalised = Arrays.stream(FoodNameNormaliser.normalise(query).split(" "))
+                .filter(word -> !word.isEmpty())
+                .limit(MAX_QUERY_WORDS)
+                .collect(Collectors.joining(" "));
         String likePatterns = normalised.isEmpty() ? "" : Arrays.stream(normalised.split(" "))
                 .map(word -> "%" + word + "%")
                 .collect(Collectors.joining(","));

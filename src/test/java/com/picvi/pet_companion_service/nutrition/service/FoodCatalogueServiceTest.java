@@ -92,6 +92,16 @@ class FoodCatalogueServiceTest {
     }
 
     @Test
+    void searchKeepsOnlyTheFirstSixWords() {
+        when(this.productRepository.search(eq(USER), eq(null), eq(null), eq(null), anyString(), anyString(), anyInt(), anyInt())).thenReturn(List.of());
+
+        this.service.search(USER, "one two three four five six seven eight", null, null, null, null, null);
+
+        verify(this.productRepository).search(USER, null, null, null, "one two three four five six",
+                "%one%,%two%,%three%,%four%,%five%,%six%", 21, 0);
+    }
+
+    @Test
     void formAndLifeStageFiltersArePassedToTheQuery() {
         when(this.productRepository.search(any(), any(), any(), any(), anyString(), anyString(), anyInt(), anyInt())).thenReturn(List.of());
 

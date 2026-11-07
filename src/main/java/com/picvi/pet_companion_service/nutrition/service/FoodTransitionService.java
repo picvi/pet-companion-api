@@ -35,6 +35,7 @@ import com.picvi.pet_companion_service.nutrition.entity.PetFood;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductIngredientRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodTransitionRepository;
+import com.picvi.pet_companion_service.nutrition.repository.PetDietLock;
 import com.picvi.pet_companion_service.nutrition.repository.PetFoodRepository;
 import com.picvi.pet_companion_service.pet.dto.PetProfile;
 import com.picvi.pet_companion_service.pet.service.PetService;
@@ -62,6 +63,7 @@ public class FoodTransitionService {
 
     private final ClientDateValidator clientDateValidator;
     private final PetService petService;
+    private final PetDietLock dietLock;
     private final RhythmApi rhythmApi;
     private final DietService dietService;
     private final FoodChangeReader changeReader;
@@ -100,6 +102,7 @@ public class FoodTransitionService {
     public DietResponse start(UUID ownerId, UUID petId, StartFoodChangeRequest request) {
         this.clientDateValidator.validate(request.date());
         PetProfile profile = this.petService.getOwnedPetProfile(ownerId, petId);
+        this.dietLock.acquire(petId);
         LocalDate date = request.date();
         if (request.clientId() != null && this.transitionRepository.findByPetIdAndClientId(petId, request.clientId()).isPresent()) {
             return this.dietService.dietFor(profile, date);
@@ -136,6 +139,7 @@ public class FoodTransitionService {
     public DietResponse act(UUID ownerId, UUID petId, UUID transitionId, FoodChangeActionRequest request) {
         this.clientDateValidator.validate(request.date());
         PetProfile profile = this.petService.getOwnedPetProfile(ownerId, petId);
+        this.dietLock.acquire(petId);
         LocalDate date = request.date();
         this.changeReader.closeIfFinished(petId, date, this.rhythmApi.mealsPerDay(petId, date));
         FoodTransition transition = this.transitionRepository.findByIdAndPetId(transitionId, petId).orElseThrow(FoodChangeNotFound::new);

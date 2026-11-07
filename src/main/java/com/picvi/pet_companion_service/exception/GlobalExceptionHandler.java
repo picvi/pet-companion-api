@@ -56,17 +56,23 @@ import com.picvi.pet_companion_service.exception.triage.InvalidCheck;
 import com.picvi.pet_companion_service.exception.triage.CheckConflict;
 import com.picvi.pet_companion_service.lostdog.exception.InvalidLostReport;
 import com.picvi.pet_companion_service.lostdog.exception.LostReportNotFound;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.sql.SQLException;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -372,6 +378,38 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidFoodChange.class)
     public ResponseEntity<ErrorResponse> handleInvalidFoodChange(InvalidFoodChange ex) {
         return error(HttpStatus.BAD_REQUEST, ex);
+    }
+
+    /** Two requests changed the same row at once; the one that lost reloads and tries again. */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+        return error(HttpStatus.CONFLICT, new VersionConflict());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleIntegrityViolation(DataIntegrityViolationException ex) {
+        if (isUniqueViolation(ex)) {
+            log.warn("Two requests raced on a unique constraint: {}", ex.getMostSpecificCause().getMessage());
+            return error(HttpStatus.CONFLICT, new VersionConflict());
+        }
+        log.error("Data integrity violation", ex);
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(500, "INTERNAL_ERROR", "Something went wrong on our side. Try again in a moment"));
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ErrorResponse> handleMissingHeader(MissingRequestHeaderException ex) {
+        return badRequest("MISSING_HEADER", ex.getHeaderName() + " is required");
+    }
+
+    private static boolean isUniqueViolation(Throwable ex) {
+        for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sql && "23505".equals(sql.getSQLState())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

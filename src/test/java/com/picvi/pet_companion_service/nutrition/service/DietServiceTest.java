@@ -44,6 +44,7 @@ import com.picvi.pet_companion_service.nutrition.repository.ExposureReader;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductIngredientRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodTransitionRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductRepository;
+import com.picvi.pet_companion_service.nutrition.repository.PetDietLock;
 import com.picvi.pet_companion_service.nutrition.repository.PetFoodRepository;
 import com.picvi.pet_companion_service.pet.dto.PetProfile;
 import com.picvi.pet_companion_service.pet.entity.VaccinationStatus;
@@ -87,6 +88,8 @@ class DietServiceTest {
     @Mock
     private PetService petService;
     @Mock
+    private PetDietLock dietLock;
+    @Mock
     private RhythmApi rhythmApi;
     @Mock
     private NutritionApi nutritionApi;
@@ -117,7 +120,7 @@ class DietServiceTest {
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-10-15T10:00:00Z"), ZoneId.of("Europe/Warsaw"));
-        this.service = new DietService(this.clientDateValidator, this.petService, this.rhythmApi, this.nutritionApi,
+        this.service = new DietService(this.clientDateValidator, this.petService, this.dietLock, this.rhythmApi, this.nutritionApi,
                 this.foodRepository, this.productRepository, this.ingredientRepository, this.notices, new PetFoodRules(),
                 this.conditionApi, new AllergyMatcher(), this.exposureReader, new ProteinExposureCalculator(), this.changeReader,
                 this.changeRecorder, this.transitionRepository, this.tummyReactions, clock);
@@ -276,6 +279,19 @@ class DietServiceTest {
         assertThatThrownBy(() -> this.service.addFood(OWNER, PET, this.add(FoodKind.MAIN, null)))
                 .isInstanceOf(MainFoodLimit.class);
         verify(this.foodRepository, never()).save(any());
+    }
+
+    @Test
+    void addingAFoodTakesThePetLockBeforeLookingAtHerFoods() {
+        this.givenVisibleProduct();
+        this.givenGiven(this.mainOfAnotherProduct(60), this.mainOfAnotherProduct(60));
+
+        assertThatThrownBy(() -> this.service.addFood(OWNER, PET, this.add(FoodKind.MAIN, AddFoodMode.FEED_BOTH)))
+                .isInstanceOf(MainFoodLimit.class);
+
+        org.mockito.InOrder order = org.mockito.Mockito.inOrder(this.dietLock, this.foodRepository);
+        order.verify(this.dietLock).acquire(PET);
+        order.verify(this.foodRepository).findGivenOn(eq(PET), eq(TODAY), eq(PetFoodStatus.ENTERED_IN_ERROR));
     }
 
     @Test

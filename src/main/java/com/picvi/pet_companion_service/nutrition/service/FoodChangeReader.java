@@ -84,6 +84,7 @@ public class FoodChangeReader {
      * (the new food is the whole meal then); the owner sees "all done" once.
      */
     public void closeIfFinished(UUID petId, LocalDate date, int mealsPerDay) {
+        this.transitionRepository.lockOpen(petId);
         this.transitionRepository.findOpen(petId, List.of(TransitionStatus.ACTIVE, TransitionStatus.PAUSED))
                 .filter(transition -> transition.getStatus() == TransitionStatus.ACTIVE)
                 .ifPresent(transition -> {

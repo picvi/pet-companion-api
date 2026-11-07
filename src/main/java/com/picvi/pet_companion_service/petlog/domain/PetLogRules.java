@@ -41,9 +41,6 @@ public class PetLogRules {
         }
         this.validateToilet(type, detail, values);
         this.validateFlags(type, values);
-        if (type == LogType.MEAL && detail == LogDetail.REFUSED && values.amountGrams() != null) {
-            throw new InvalidLog(LogField.AMOUNT_GRAMS, InvalidLog.NOT_ALLOWED_FOR_DETAIL);
-        }
         if (type == LogType.SYMPTOM && detail == LogDetail.OTHER && values.note() == null) {
             throw new InvalidLog(LogField.NOTE, InvalidLog.REQUIRED);
         }
@@ -69,7 +66,6 @@ public class PetLogRules {
             if (!seen.add(food.petFoodId())) {
                 throw new InvalidLog(LogField.FOODS, InvalidLog.DUPLICATE);
             }
-            this.validateRange(LogField.FOODS, food.grams(), 1, 2000);
         }
     }
 

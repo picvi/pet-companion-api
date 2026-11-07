@@ -158,7 +158,7 @@ public class PetLog {
     public LogValues values() {
         return new LogValues(this.accident, this.getStoolScore(), this.flags, this.getAmountGrams(), this.getWeightGrams(),
                 this.getDurationMinutes(), this.wellbeing, this.label, this.dose, this.note,
-                this.foods.stream().map(food -> new LogFood(food.getPetFoodId(), food.getGrams())).toList());
+                this.foods.stream().map(food -> new LogFood(food.getPetFoodId())).toList());
     }
 
     private void apply(LogDetail detail, LogValues values, LocalDate localDate, int minuteOfDay, LoggedAt loggedAt) {
@@ -180,7 +180,7 @@ public class PetLog {
         this.flags.clear();
         this.flags.addAll(values.flags());
         this.foods.clear();
-        values.foods().forEach(food -> this.foods.add(new LoggedFood(food.petFoodId(), food.grams())));
+        values.foods().forEach(food -> this.foods.add(new LoggedFood(food.petFoodId())));
     }
 
     private void putMeasure(MeasureKind kind, Integer value) {

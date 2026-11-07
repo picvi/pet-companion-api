@@ -53,7 +53,7 @@ public record PetLogDto(UUID id,
                 .withOffsetSameInstant(ZoneOffset.ofTotalSeconds(log.getUtcOffsetMinutes() * 60));
                 List<LogFlag> flags = log.getFlags().stream().sorted(Comparator.naturalOrder()).toList();
         List<LogFood> foods = log.getFoods().stream()
-                .map(food -> new LogFood(food.getPetFoodId(), food.getGrams()))
+                .map(food -> new LogFood(food.getPetFoodId()))
                 .sorted(Comparator.comparing(LogFood::petFoodId))
                 .toList();
         return new PetLogDto(log.getId(), log.getClientId(), log.getType(), log.getDetail(), log.getAmountGrams(),

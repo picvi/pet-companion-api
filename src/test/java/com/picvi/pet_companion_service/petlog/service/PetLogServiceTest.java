@@ -137,11 +137,10 @@ class PetLogServiceTest {
         when(this.logRepository.save(any(PetLog.class))).thenAnswer(call -> call.getArgument(0));
 
         this.service.log(OWNER_ID, PET_ID,
-                newLog(LogType.MEAL, LogDetail.LEFT_SOME, new LogValues(null, null, null, 30, null, null, null, null, null, null), TODAY, 435, null), TODAY);
+                newLog(LogType.MEAL, LogDetail.LEFT_SOME, LogValues.none(), TODAY, 435, null), TODAY);
 
         ArgumentCaptor<PetLog> saved = ArgumentCaptor.forClass(PetLog.class);
         verify(this.logRepository).save(saved.capture());
-        assertThat(saved.getValue().getAmountGrams()).isEqualTo(30);
         assertThat(saved.getValue().getUtcOffsetMinutes()).isEqualTo(120);
         assertThat(saved.getValue().getOccurredAt()).isEqualTo(OffsetDateTime.parse("2026-10-14T07:15+02:00"));
     }
@@ -351,11 +350,10 @@ class PetLogServiceTest {
                 new ActiveFood(oldFood, UUID.randomUUID(), FoodKind.MAIN), new ActiveFood(newFood, UUID.randomUUID(), FoodKind.MAIN)));
         when(this.logRepository.save(any(PetLog.class))).thenAnswer(call -> call.getArgument(0));
         LogValues values = new LogValues(null, null, null, null, null, null, null, null, null, null,
-                List.of(new LogFood(oldFood, 15), new LogFood(newFood, 15)));
+                List.of(new LogFood(oldFood), new LogFood(newFood)));
 
         PetLogService.LogResult result = this.service.log(OWNER_ID, PET_ID, newLog(LogType.MEAL, LogDetail.ATE_ALL, values, TODAY, 480, 120), TODAY);
 
-        assertThat(result.log().foods()).extracting(LogFood::grams).containsExactlyInAnyOrder(15, 15);
         assertThat(result.log().foods()).extracting(LogFood::petFoodId).containsExactlyInAnyOrder(oldFood, newFood);
     }
 
@@ -365,7 +363,7 @@ class PetLogServiceTest {
         this.givenNoExistingLog();
         when(this.nutritionApi.activeFoods(PET_ID, TODAY)).thenReturn(List.of());
         LogValues values = new LogValues(null, null, null, null, null, null, null, null, null, null,
-                List.of(new LogFood(UUID.randomUUID(), null)));
+                List.of(new LogFood(UUID.randomUUID())));
 
         assertThatThrownBy(() -> this.service.log(OWNER_ID, PET_ID, newLog(LogType.MEAL, LogDetail.ATE_ALL, values, TODAY, 480, 120), TODAY))
                 .isInstanceOf(FoodNotActive.class);
@@ -418,10 +416,10 @@ class PetLogServiceTest {
     }
 
     @Test
-    void aMealDuringAFoodChangeGetsTheNewFoodFlag() {
+    void aMealWithTheIncomingFoodGetsTheNewFoodFlag() {
         this.givenOwnedPet();
         this.givenNoExistingLog();
-        when(this.nutritionApi.isFoodChangeOn(PET_ID, TODAY)).thenReturn(true);
+        when(this.nutritionApi.isNewFoodMeal(PET_ID, TODAY, List.of())).thenReturn(true);
         when(this.logRepository.save(any(PetLog.class))).thenAnswer(call -> call.getArgument(0));
 
         PetLogService.LogResult result = this.service.log(OWNER_ID, PET_ID,

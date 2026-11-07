@@ -13,7 +13,6 @@ import com.picvi.pet_companion_service.nutrition.domain.AllergyMatch;
 import com.picvi.pet_companion_service.nutrition.domain.AllergyMatcher;
 import com.picvi.pet_companion_service.nutrition.domain.CancelKeep;
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
-import com.picvi.pet_companion_service.nutrition.domain.FoodOrigin;
 import com.picvi.pet_companion_service.nutrition.domain.MealPortionCalculator;
 import com.picvi.pet_companion_service.nutrition.domain.PetFoodStatus;
 import com.picvi.pet_companion_service.nutrition.domain.ProductStatus;
@@ -122,7 +121,7 @@ public class FoodTransitionService {
         UUID clientId = request.clientId() == null ? UUID.randomUUID() : request.clientId();
 
         PetFood to = this.foodRepository.save(new PetFood(petId, UUID.randomUUID(), product, FoodKind.MAIN, dailyGrams, false,
-                request.origin() == null ? FoodOrigin.OWNER : request.origin(), startOn, ownerId, this.clock.instant()));
+                startOn, ownerId, this.clock.instant()));
         if (request.pace() == TransitionPace.IMMEDIATE) {
             this.changeRecorder.recordReplacement(petId, clientId, from, to, startOn);
         } else {

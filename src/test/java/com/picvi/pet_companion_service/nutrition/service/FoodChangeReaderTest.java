@@ -3,7 +3,6 @@ package com.picvi.pet_companion_service.nutrition.service;
 import com.picvi.pet_companion_service.nutrition.domain.Completeness;
 import com.picvi.pet_companion_service.nutrition.domain.FoodForm;
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
-import com.picvi.pet_companion_service.nutrition.domain.FoodOrigin;
 import com.picvi.pet_companion_service.nutrition.domain.LifeStage;
 import com.picvi.pet_companion_service.nutrition.domain.PetFoodStatus;
 import com.picvi.pet_companion_service.nutrition.domain.ProteinStatus;
@@ -78,7 +77,7 @@ class FoodChangeReaderTest {
     }
 
     private PetFood food(FoodProduct product) {
-        PetFood food = new PetFood(PET, UUID.randomUUID(), product, FoodKind.MAIN, 120, false, FoodOrigin.OWNER, MON,
+        PetFood food = new PetFood(PET, UUID.randomUUID(), product, FoodKind.MAIN, 120, false, MON,
                 UUID.randomUUID(), Instant.now());
         ReflectionTestUtils.setField(food, "id", UUID.randomUUID());
         return food;

@@ -7,6 +7,7 @@ import com.picvi.pet_companion_service.pet.service.PetService;
 import com.picvi.pet_companion_service.rhythm.domain.DaySettings;
 import com.picvi.pet_companion_service.rhythm.domain.RhythmRule;
 import com.picvi.pet_companion_service.rhythm.domain.RhythmRuleResolver;
+import com.picvi.pet_companion_service.rhythm.domain.DefaultDayProposer;
 import com.picvi.pet_companion_service.rhythm.domain.RhythmSettingsValidator;
 import com.picvi.pet_companion_service.rhythm.dto.RhythmDayResponse;
 import com.picvi.pet_companion_service.rhythm.entity.PetRhythmSettings;
@@ -29,6 +30,7 @@ public class RhythmSettingsService {
     private final RhythmRuleLoader ruleLoader;
     private final RhythmRuleResolver ruleResolver;
     private final RhythmSettingsValidator settingsValidator;
+    private final DefaultDayProposer defaultDayProposer;
     private final PetRhythmSettingsRepository settingsRepository;
     private final RhythmService rhythmService;
 
@@ -48,6 +50,16 @@ public class RhythmSettingsService {
         this.settingsRepository.save(entity);
 
         return this.rhythmService.buildDay(profile, date);
+    }
+
+    /** Changes only how many meals there are; the server spreads the meal times over her day. */
+    public RhythmDayResponse updateMealsPerDay(UUID ownerId, UUID petId, int mealsPerDay, LocalDate date) {
+        this.clientDateValidator.validate(date);
+        PetProfile profile = this.petService.getOwnedPetProfile(ownerId, petId);
+        DaySettings current = this.settingsRepository.findByPetId(petId)
+                .map(PetRhythmSettings::toDaySettings)
+                .orElseGet(() -> this.defaultDayProposer.propose(this.ruleFor(profile, date)));
+        return this.update(ownerId, petId, this.defaultDayProposer.withMealCount(current, mealsPerDay), date);
     }
 
     public RhythmDayResponse markBandNoteSeen(UUID ownerId, UUID petId, LocalDate date) {

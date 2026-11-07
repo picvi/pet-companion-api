@@ -1,7 +1,6 @@
 package com.picvi.pet_companion_service.nutrition.entity;
 
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
-import com.picvi.pet_companion_service.nutrition.domain.FoodOrigin;
 import com.picvi.pet_companion_service.nutrition.domain.PetFoodStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -47,11 +46,6 @@ public class PetFood {
     private boolean forTraining;
 
     @Getter
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private FoodOrigin origin;
-
-    @Getter
     @Column(name = "started_on", nullable = false)
     private LocalDate startedOn;
 
@@ -79,14 +73,13 @@ public class PetFood {
     public PetFood() {}
 
     public PetFood(UUID petId, UUID clientId, FoodProduct product, FoodKind kind, Integer dailyGrams, boolean forTraining,
-                   FoodOrigin origin, LocalDate startedOn, UUID createdBy, Instant now) {
+                   LocalDate startedOn, UUID createdBy, Instant now) {
         this.petId = petId;
         this.clientId = clientId;
         this.product = product;
         this.kind = kind;
         this.dailyGrams = dailyGrams;
         this.forTraining = forTraining;
-        this.origin = origin;
         this.startedOn = startedOn;
         this.status = PetFoodStatus.ACTIVE;
         this.createdBy = createdBy;
@@ -100,10 +93,9 @@ public class PetFood {
                 && (this.endedOn == null || date.isBefore(this.endedOn));
     }
 
-    public void update(Integer dailyGrams, boolean forTraining, FoodOrigin origin) {
+    public void update(Integer dailyGrams, boolean forTraining) {
         this.dailyGrams = dailyGrams;
         this.forTraining = forTraining;
-        this.origin = origin;
     }
 
     /** The first day the food is no longer given. */

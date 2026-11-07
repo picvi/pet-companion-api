@@ -1,6 +1,5 @@
 package com.picvi.pet_companion_service.nutrition.dto;
 
-import com.picvi.pet_companion_service.nutrition.domain.FoodOrigin;
 import com.picvi.pet_companion_service.nutrition.domain.TransitionPace;
 import jakarta.validation.constraints.NotNull;
 
@@ -17,7 +16,6 @@ public record StartFoodChangeRequest(UUID clientId,
                                      @NotNull TransitionPace pace,
                                      LocalDate startOn,
                                      Integer dailyGrams,
-                                     FoodOrigin origin,
                                      Boolean confirmAllergy,
                                      @NotNull LocalDate date) {
 }

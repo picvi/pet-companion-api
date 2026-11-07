@@ -43,7 +43,7 @@
   {
     "type": "MEAL",
     "detail": "LEFT_SOME",
-    "amountGrams": 40,
+    "amountGrams": null,
     "localDate": "2026-10-10",
     "minuteOfDay": 480,
     "occurredAt": "2026-10-10T10:00:00+02:00",
@@ -60,9 +60,7 @@
     "dose": null,
     "note": null,
     "foods": [
-      {
-        "grams": 40
-      }
+      {}
     ]
   },
   {

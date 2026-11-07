@@ -45,6 +45,7 @@ import com.picvi.pet_companion_service.exception.nutrition.FoodProductNotFound;
 import com.picvi.pet_companion_service.exception.nutrition.InvalidFoodProduct;
 import com.picvi.pet_companion_service.exception.nutrition.InvalidPetFood;
 import com.picvi.pet_companion_service.exception.nutrition.PetFoodNotFound;
+import com.picvi.pet_companion_service.exception.nutrition.MainFoodLimit;
 import com.picvi.pet_companion_service.exception.nutrition.SecondMainFood;
 import com.picvi.pet_companion_service.exception.nutrition.VersionConflict;
 import com.picvi.pet_companion_service.exception.nutrition.ProteinRequired;
@@ -284,6 +285,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidPetFood.class)
     public ResponseEntity<ErrorResponse> handleInvalidPetFood(InvalidPetFood ex) {
         return error(HttpStatus.BAD_REQUEST, ex);
+    }
+
+    @ExceptionHandler(MainFoodLimit.class)
+    public ResponseEntity<ErrorResponse> handleMainFoodLimit(MainFoodLimit ex) {
+        return error(HttpStatus.CONFLICT, ex);
     }
 
     @ExceptionHandler(SecondMainFood.class)

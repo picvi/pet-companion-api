@@ -10,7 +10,7 @@ public class LogSpecs {
     public LogSpec of(LogType type) {
         return switch (type) {
             case TOILET -> spec(true, Set.of(), ACCIDENT, STOOL_SCORE, FLAGS, NOTE);
-            case MEAL -> spec(false, Set.of(), AMOUNT_GRAMS, LABEL, FLAGS, NOTE, FOODS);
+            case MEAL -> spec(false, Set.of(), LABEL, FLAGS, NOTE, FOODS);
             case SLEEP, WAKE -> spec(false, Set.of(), NOTE);
             case WALK -> spec(false, Set.of(DURATION_MINUTES), NOTE);
             case WEIGHT -> spec(false, Set.of(WEIGHT_GRAMS), NOTE);

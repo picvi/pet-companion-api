@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.UUID;
 
 /** What other modules may ask rhythm. Rhythm passes meals per day into nutrition, so nutrition asks here only for its own endpoint. */
@@ -32,11 +33,21 @@ public class RhythmApi {
         if (saved > 0) {
             return saved;
         }
+        return this.ruleFor(petId, date)
+                .map(rule -> rule.meals().standard())
+                .orElse(FALLBACK_MEALS_PER_DAY);
+    }
+
+    @Transactional(readOnly = true)
+    public MealsRange mealsRange(UUID petId, LocalDate date) {
+        return this.ruleFor(petId, date)
+                .map(rule -> new MealsRange(rule.meals().min(), rule.meals().max()))
+                .orElse(new MealsRange(FALLBACK_MEALS_PER_DAY, FALLBACK_MEALS_PER_DAY));
+    }
+
+    private Optional<RhythmRule> ruleFor(UUID petId, LocalDate date) {
         Pet pet = this.petService.getReference(petId);
         int ageWeeks = (int) ChronoUnit.WEEKS.between(pet.getBirthDate(), date);
-        return this.ruleResolver.resolve(this.ruleLoader.loadAll(), ageWeeks, pet.getBreed().getSizeCategory())
-                .map(RhythmRule::meals)
-                .map(meals -> meals.standard())
-                .orElse(FALLBACK_MEALS_PER_DAY);
+        return this.ruleResolver.resolve(this.ruleLoader.loadAll(), ageWeeks, pet.getBreed().getSizeCategory());
     }
 }

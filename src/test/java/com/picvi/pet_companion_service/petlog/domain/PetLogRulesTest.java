@@ -63,9 +63,9 @@ class PetLogRulesTest {
     }
 
     @Test
-    void refusedMealHasNoAmount() {
-        this.assertInvalid(LogType.MEAL, LogDetail.REFUSED, values(null, null, null, 40, null, null, null, null, null, null),
-                LogField.AMOUNT_GRAMS, InvalidLog.NOT_ALLOWED_FOR_DETAIL);
+    void mealHasNoAmount() {
+        this.assertInvalid(LogType.MEAL, LogDetail.ATE_ALL, values(null, null, null, 40, null, null, null, null, null, null),
+                LogField.AMOUNT_GRAMS, InvalidLog.NOT_ALLOWED);
     }
 
     @Test
@@ -198,7 +198,7 @@ class PetLogRulesTest {
     @Test
     void mealMayLinkSeveralOfThePetsFoods() {
         LogValues values = new LogValues(null, null, null, null, null, null, null, null, null, null,
-                List.of(new LogFood(UUID.randomUUID(), 22), new LogFood(UUID.randomUUID(), null)));
+                List.of(new LogFood(UUID.randomUUID()), new LogFood(UUID.randomUUID())));
 
         assertThatCode(() -> this.rules.validate(LogType.MEAL, LogDetail.ATE_ALL, values)).doesNotThrowAnyException();
     }
@@ -206,7 +206,7 @@ class PetLogRulesTest {
     @Test
     void foodsAreNotAllowedOnAToilet() {
         LogValues values = new LogValues(null, null, null, null, null, null, null, null, null, null,
-                List.of(new LogFood(UUID.randomUUID(), 22)));
+                List.of(new LogFood(UUID.randomUUID())));
 
         assertThatThrownBy(() -> this.rules.validate(LogType.TOILET, LogDetail.PEE, values))
                 .isInstanceOfSatisfying(InvalidLog.class, e -> assertThat(e.getField()).isEqualTo(LogField.FOODS));
@@ -216,24 +216,15 @@ class PetLogRulesTest {
     void theSameFoodTwiceIsRejected() {
         UUID food = UUID.randomUUID();
         LogValues values = new LogValues(null, null, null, null, null, null, null, null, null, null,
-                List.of(new LogFood(food, 10), new LogFood(food, 20)));
+                List.of(new LogFood(food), new LogFood(food)));
 
         assertThatThrownBy(() -> this.rules.validate(LogType.MEAL, null, values))
                 .isInstanceOfSatisfying(InvalidLog.class, e -> assertThat(e.getReason()).isEqualTo(InvalidLog.DUPLICATE));
     }
 
     @Test
-    void foodGramsMustBeInRange() {
-        LogValues values = new LogValues(null, null, null, null, null, null, null, null, null, null,
-                List.of(new LogFood(UUID.randomUUID(), 2001)));
-
-        assertThatThrownBy(() -> this.rules.validate(LogType.MEAL, null, values))
-                .isInstanceOfSatisfying(InvalidLog.class, e -> assertThat(e.getReason()).isEqualTo(InvalidLog.OUT_OF_RANGE));
-    }
-
-    @Test
     void tooManyFoodsAreRejected() {
-        List<LogFood> seven = java.util.stream.IntStream.range(0, 7).mapToObj(i -> new LogFood(UUID.randomUUID(), 10)).toList();
+        List<LogFood> seven = java.util.stream.IntStream.range(0, 7).mapToObj(i -> new LogFood(UUID.randomUUID())).toList();
         LogValues values = new LogValues(null, null, null, null, null, null, null, null, null, null, seven);
 
         assertThatThrownBy(() -> this.rules.validate(LogType.MEAL, null, values))

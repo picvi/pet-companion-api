@@ -1,7 +1,13 @@
 package com.picvi.pet_companion_service.nutrition.api;
 
 import com.picvi.pet_companion_service.nutrition.api.FoodChangeNow.State;
+import com.picvi.pet_companion_service.nutrition.domain.ChangeView;
+import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
 import com.picvi.pet_companion_service.nutrition.domain.MealPortionCalculator;
+import com.picvi.pet_companion_service.nutrition.domain.PortionState;
+import com.picvi.pet_companion_service.nutrition.domain.TransitionPlanCalculator;
+import com.picvi.pet_companion_service.nutrition.entity.PetFood;
+import org.springframework.test.util.ReflectionTestUtils;
 import com.picvi.pet_companion_service.nutrition.domain.TransitionPace;
 import com.picvi.pet_companion_service.nutrition.entity.FoodTransition;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductChangeRepository;
@@ -146,6 +152,62 @@ class NutritionApiTest {
         Optional<FoodChangeNow> change = this.api.changeNow(PET, TODAY, 14);
 
         assertThat(change).contains(new FoodChangeNow(State.RUNNING, TODAY.minusDays(2)));
+    }
+
+    @Test
+    void aMealWithTheIncomingFoodIsANewFoodMeal() {
+        FoodTransition transition = planned(TODAY.minusDays(2));
+        givenTransitions(transition);
+
+        assertThat(this.api.isNewFoodMeal(PET, TODAY, List.of(transition.getToFoodId()))).isTrue();
+    }
+
+    @Test
+    void aMealWithOnlyTheSteadyFoodIsNotANewFoodMeal() {
+        givenTransitions(planned(TODAY.minusDays(2)));
+
+        assertThat(this.api.isNewFoodMeal(PET, TODAY, List.of(UUID.randomUUID()))).isFalse();
+    }
+
+    @Test
+    void aMealWithNoFoodListedDuringAChangeIsANewFoodMeal() {
+        givenTransitions(planned(TODAY.minusDays(2)));
+
+        assertThat(this.api.isNewFoodMeal(PET, TODAY, List.of())).isTrue();
+    }
+
+    @Test
+    void noMealIsANewFoodMealOutsideAChange() {
+        givenTransitions();
+
+        assertThat(this.api.isNewFoodMeal(PET, TODAY, List.of())).isFalse();
+    }
+
+    @Test
+    void theSteadyMainFoodStaysInTheBowlWhileTheOtherOneChanges() {
+        PetFood changing = this.main(120);
+        PetFood incoming = this.main(120);
+        PetFood steady = this.main(60);
+        LocalDate start = TODAY.minusDays(1);
+        FoodTransition transition = FoodTransition.planned(PET, UUID.randomUUID(), changing.getId(), incoming.getId(), TransitionPace.STANDARD,
+                start, Instant.now());
+        TransitionPlanCalculator.Plan plan = new TransitionPlanCalculator().plan(new TransitionPlanCalculator.PlanInput(
+                List.of(new TransitionPlanCalculator.PaceStep(1, 2, 25), new TransitionPlanCalculator.PaceStep(2, 2, 50)),
+                start, List.of(), java.util.Map.of(), 30), TODAY);
+        when(this.changeReader.current(PET, TODAY, 4)).thenReturn(Optional.of(new ChangeView(transition, plan, changing, incoming)));
+        when(this.foodRepository.findGivenOn(any(), any(), any())).thenReturn(List.of(changing, incoming, steady));
+
+        MealPlan result = this.api.portionsFor(PET, TODAY, 4);
+
+        assertThat(result.today().state()).isEqualTo(PortionState.MIX);
+        assertThat(result.today().portions()).extracting(MealPortion::petFoodId).containsExactly(changing.getId(), incoming.getId(), steady.getId());
+        assertThat(result.today().portions().get(2).grams()).isEqualTo(15);
+    }
+
+    private PetFood main(int grams) {
+        PetFood food = new PetFood(PET, UUID.randomUUID(), null, FoodKind.MAIN, grams, false, TODAY.minusDays(10), UUID.randomUUID(), Instant.now());
+        ReflectionTestUtils.setField(food, "id", UUID.randomUUID());
+        return food;
     }
 
     private void givenTransitions(FoodTransition... transitions) {

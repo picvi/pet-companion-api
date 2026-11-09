@@ -51,7 +51,21 @@ ALTER TABLE pet_log
             AND (dose_on IS NULL) = (dose_minute IS NULL)
             AND (dose_minute IS NULL OR dose_minute BETWEEN 0 AND 1439))),
     ADD CONSTRAINT fk_pet_log_course FOREIGN KEY (course_id, pet_id)
-        REFERENCES medication_course (id, pet_id) ON DELETE SET NULL (course_id, dose_on, dose_minute);
+        REFERENCES medication_course (id, pet_id) ON DELETE SET NULL (course_id);
+
+CREATE FUNCTION clear_pet_log_dose() RETURNS TRIGGER AS $$
+BEGIN
+    NEW.dose_on := NULL;
+    NEW.dose_minute := NULL;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_pet_log_course_removed
+    BEFORE UPDATE OF course_id ON pet_log
+    FOR EACH ROW
+    WHEN (OLD.course_id IS NOT NULL AND NEW.course_id IS NULL)
+    EXECUTE FUNCTION clear_pet_log_dose();
 
 CREATE UNIQUE INDEX uq_pet_log_course_dose ON pet_log (course_id, dose_on, dose_minute) WHERE dose_on IS NOT NULL;
 CREATE INDEX idx_pet_log_course_date ON pet_log (course_id, local_date, minute_of_day) WHERE course_id IS NOT NULL;

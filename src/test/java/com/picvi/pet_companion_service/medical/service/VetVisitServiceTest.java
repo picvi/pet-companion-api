@@ -17,7 +17,6 @@ import com.picvi.pet_companion_service.medical.dto.UpcomingVisitsResponse;
 import com.picvi.pet_companion_service.medical.dto.VetVisitDto;
 import com.picvi.pet_companion_service.medical.entity.VetVisit;
 import com.picvi.pet_companion_service.medical.repository.VetVisitRepository;
-import com.picvi.pet_companion_service.medical.service.VisitLinksReader;
 import com.picvi.pet_companion_service.medication.api.MedicationApi;
 import com.picvi.pet_companion_service.pet.dto.PetProfile;
 import com.picvi.pet_companion_service.pet.service.PetService;

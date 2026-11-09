@@ -1,13 +1,13 @@
 package com.picvi.pet_companion_service.brief.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.picvi.pet_companion_service.brief.domain.BriefReason;
 import com.picvi.pet_companion_service.brief.domain.Concern;
 import com.picvi.pet_companion_service.brief.domain.Trend;
 import com.picvi.pet_companion_service.brief.dto.BriefOptionsResponse.PeriodDto;
 import com.picvi.pet_companion_service.care.dto.CareItemDto;
 import com.picvi.pet_companion_service.condition.api.ConditionApi.ConditionSnapshot;
 import com.picvi.pet_companion_service.medical.api.MedicalApi.VisitSnapshot;
-import com.picvi.pet_companion_service.medical.domain.VisitReason;
 import com.picvi.pet_companion_service.nutrition.dto.DietHistoryResponse;
 import com.picvi.pet_companion_service.pet.entity.Sex;
 import com.picvi.pet_companion_service.petlog.domain.LogDetail;
@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public record VetBriefResponse(Instant generatedAt,
-                               VisitReason reason,
+                               BriefReason reason,
                                PeriodDto period,
                                PetDto pet,
                                MainWorryDto mainWorry,

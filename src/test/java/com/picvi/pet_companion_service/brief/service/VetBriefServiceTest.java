@@ -1,6 +1,7 @@
 package com.picvi.pet_companion_service.brief.service;
 
 import com.picvi.pet_companion_service.breeds.entity.SizeCategory;
+import com.picvi.pet_companion_service.brief.domain.BriefReason;
 import com.picvi.pet_companion_service.brief.domain.Concern;
 import com.picvi.pet_companion_service.brief.domain.ConcernCounter;
 import com.picvi.pet_companion_service.brief.domain.QuestionSuggester;
@@ -148,7 +149,7 @@ class VetBriefServiceTest {
 
         assertThat(brief.mainWorry()).isNull();
         assertThat(brief.days()).isEmpty();
-        assertThat(brief.reason()).isEqualTo(VisitReason.CHECK_UP);
+        assertThat(brief.reason()).isEqualTo(BriefReason.CHECK_UP);
         assertThat(brief.period().from()).isEqualTo(LocalDate.of(2026, 10, 9));
         assertThat(brief.pet().ageWeeks()).isEqualTo(11);
         assertThat(brief.pet().microchipNumber()).isEqualTo("616093900123456");

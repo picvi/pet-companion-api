@@ -75,6 +75,7 @@ class TummyReactionServiceTest {
                 this.transitionRepository, this.extensionRepository, this.pauseRepository, this.rhythmApi);
         this.transition = FoodTransition.planned(PET, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), TransitionPace.STANDARD, MON, Instant.now());
         ReflectionTestUtils.setField(this.transition, "id", UUID.randomUUID());
+        lenient().when(this.transitionRepository.lockOpen(PET)).thenReturn(List.of(this.transition.getId()));
         lenient().when(this.transitionRepository.findOpen(eq(PET), any())).thenReturn(Optional.of(this.transition));
         lenient().when(this.rhythmApi.mealsPerDay(PET, WED)).thenReturn(4);
         TransitionPlanCalculator calculator = new TransitionPlanCalculator();
@@ -159,10 +160,11 @@ class TummyReactionServiceTest {
 
     @Test
     void nothingRunningMeansNothingToDo() {
-        when(this.transitionRepository.findOpen(eq(PET), any())).thenReturn(Optional.empty());
+        when(this.transitionRepository.lockOpen(PET)).thenReturn(List.of());
 
         this.service.apply(PET, WED);
 
+        verify(this.transitionRepository, never()).findOpen(any(), any());
         verify(this.petLogApi, never()).logsSince(any(), any());
     }
 }

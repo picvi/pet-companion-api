@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.picvi.pet_companion_service.medical.dto.LogVisitRequest;
 import com.picvi.pet_companion_service.medical.dto.UpcomingVisitsResponse;
+import com.picvi.pet_companion_service.medical.dto.VisitHistoryPage;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -19,6 +21,16 @@ class VetVisitsContractTest {
     @Test
     void upcomingFixtureRoundTrips() throws IOException {
         this.assertRoundTrip("vet-visits-upcoming.json", UpcomingVisitsResponse.class);
+    }
+
+    @Test
+    void historyFixtureRoundTrips() throws IOException {
+        this.assertRoundTrip("vet-visits-history.json", VisitHistoryPage.class);
+    }
+
+    @Test
+    void logRequestFixtureRoundTrips() throws IOException {
+        this.assertRoundTrip("vet-visit-log-request.json", LogVisitRequest.class);
     }
 
     private <T> void assertRoundTrip(String name, Class<T> type) throws IOException {

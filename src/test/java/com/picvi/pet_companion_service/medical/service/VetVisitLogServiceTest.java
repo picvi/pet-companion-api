@@ -11,6 +11,7 @@ import com.picvi.pet_companion_service.exception.nutrition.VersionConflict;
 import com.picvi.pet_companion_service.medical.domain.VetAppointmentRule;
 import com.picvi.pet_companion_service.medical.domain.VetVisitRules;
 import com.picvi.pet_companion_service.medical.domain.VisitChildIds;
+import com.picvi.pet_companion_service.medical.domain.VisitHistoryPaging;
 import com.picvi.pet_companion_service.medical.domain.VisitLogRole;
 import com.picvi.pet_companion_service.medical.domain.VisitOutcome;
 import com.picvi.pet_companion_service.medical.domain.VisitOutcomeRule;
@@ -91,7 +92,7 @@ class VetVisitLogServiceTest {
     @BeforeEach
     void setUp() {
         this.service = new VetVisitService(this.clientDateValidator, this.petService, this.repository, new VetVisitRules(),
-                new VisitOutcomeRule(), this.dayEventApi, this.careApi, this.petLogApi, this.petLogRecorder, this.medicationApi,
+                new VisitOutcomeRule(), new VisitHistoryPaging(), this.dayEventApi, this.careApi, this.petLogApi, this.petLogRecorder, this.medicationApi,
                 new VisitLinksReader(this.careApi, this.petLogApi, this.medicationApi), new VetAppointmentRule(),
                 Clock.fixed(NOW, ZoneOffset.UTC));
         lenient().when(this.petService.getOwnedPetProfile(OWNER, PET)).thenReturn(

@@ -12,6 +12,7 @@ import com.picvi.pet_companion_service.medical.domain.PlannedAppointment;
 import com.picvi.pet_companion_service.medical.domain.VetAppointmentRule;
 import com.picvi.pet_companion_service.medical.domain.VetVisitRules;
 import com.picvi.pet_companion_service.medical.domain.VisitChildIds;
+import com.picvi.pet_companion_service.medical.domain.VisitHistoryPaging;
 import com.picvi.pet_companion_service.medical.domain.VisitLogRole;
 import com.picvi.pet_companion_service.medical.domain.VisitOutcomeRule;
 import com.picvi.pet_companion_service.medical.domain.VisitStatus;
@@ -22,6 +23,7 @@ import com.picvi.pet_companion_service.medical.dto.NextVetAppointmentDto;
 import com.picvi.pet_companion_service.medical.dto.PlanVisitRequest;
 import com.picvi.pet_companion_service.medical.dto.UpcomingVisitsResponse;
 import com.picvi.pet_companion_service.medical.dto.VetVisitDto;
+import com.picvi.pet_companion_service.medical.dto.VisitHistoryPage;
 import com.picvi.pet_companion_service.medical.dto.VisitLinks;
 import com.picvi.pet_companion_service.medical.entity.VetVisit;
 import com.picvi.pet_companion_service.medical.entity.VisitProcedure;
@@ -31,6 +33,7 @@ import com.picvi.pet_companion_service.pet.service.PetService;
 import com.picvi.pet_companion_service.petlog.api.PetLogApi;
 import com.picvi.pet_companion_service.petlog.api.PetLogRecorder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,6 +63,7 @@ public class VetVisitService {
     private final VetVisitRepository repository;
     private final VetVisitRules rules;
     private final VisitOutcomeRule outcomeRule;
+    private final VisitHistoryPaging historyPaging;
     private final DayEventApi dayEventApi;
     private final CareApi careApi;
     private final PetLogApi petLogApi;
@@ -89,6 +93,23 @@ public class VetVisitService {
                 plans.stream().map(plan -> VetVisitDto.of(plan, appointments.get(plan.getDayEventId()), VisitLinks.none(), null)).toList(),
                 lastVisit,
                 this.appointmentRule.evaluate(booked, date).map(NextVetAppointmentDto::of).orElse(null));
+    }
+
+    @Transactional(readOnly = true)
+    public VisitHistoryPage history(UUID ownerId, UUID petId, LocalDate before, Integer requestedSize) {
+        this.petService.getOwnedPetProfile(ownerId, petId);
+        LocalDate today = LocalDate.now(this.clock);
+        int size = this.historyPaging.size(requestedSize);
+        List<VetVisit> rows = this.repository.findAllByPetIdAndStatusAndVisitedOnLessThanOrderByVisitedOnDescCreatedAtDesc(
+                petId, VisitStatus.DONE, before == null ? today.plusDays(2) : before, PageRequest.of(0, size + 1));
+        VisitHistoryPaging.Page<VetVisit> page = this.historyPaging.cut(rows, size, VetVisit::getVisitedOn);
+
+        Map<UUID, VisitLinks> links = this.linksReader.read(petId, page.rows(), today);
+        Map<UUID, UUID> followUpPlanIds = this.followUpPlanIds(page.rows());
+        List<VetVisitDto> visits = page.rows().stream()
+                .map(visit -> VetVisitDto.of(visit, null, links.get(visit.getId()), followUpPlanIds.get(visit.getId())))
+                .toList();
+        return new VisitHistoryPage(visits, page.nextBefore());
     }
 
     @Transactional(readOnly = true)
@@ -312,8 +333,16 @@ public class VetVisitService {
         }
     }
 
+    private Map<UUID, UUID> followUpPlanIds(List<VetVisit> visits) {
+        if (visits.isEmpty()) {
+            return Map.of();
+        }
+        return this.repository.findAllByFollowUpOfIn(visits.stream().map(VetVisit::getId).toList()).stream()
+                .collect(Collectors.toMap(VetVisit::getFollowUpOf, VetVisit::getId, (first, second) -> first));
+    }
+
     private VetVisitDto toDto(VetVisit visit, LocalDate date) {
-        DayEventApi.VetAppointment appointment = visit.getDayEventId() == null ? null
+        DayEventApi.VetAppointment appointment = !visit.isPlanned() || visit.getDayEventId() == null ? null
                 : this.dayEventApi.vetAppointments(visit.getPetId(), List.of(visit.getDayEventId())).get(visit.getDayEventId());
         UUID followUpPlanId = this.repository.findFirstByFollowUpOf(visit.getId()).map(VetVisit::getId).orElse(null);
         VisitLinks links = this.linksReader.read(visit.getPetId(), List.of(visit), date).get(visit.getId());

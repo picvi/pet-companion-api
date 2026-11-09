@@ -7,14 +7,17 @@ import com.picvi.pet_companion_service.exception.medical.InvalidVetVisit;
 import com.picvi.pet_companion_service.exception.medical.VetVisitNotFound;
 import com.picvi.pet_companion_service.exception.medical.VisitStatusConflict;
 import com.picvi.pet_companion_service.exception.nutrition.VersionConflict;
+import com.picvi.pet_companion_service.exception.pet.PetNotFound;
 import com.picvi.pet_companion_service.medical.domain.AppointmentStatus;
 import com.picvi.pet_companion_service.medical.domain.VetAppointmentRule;
 import com.picvi.pet_companion_service.medical.domain.VetVisitRules;
+import com.picvi.pet_companion_service.medical.domain.VisitHistoryPaging;
 import com.picvi.pet_companion_service.medical.domain.VisitOutcomeRule;
 import com.picvi.pet_companion_service.medical.domain.VisitStatus;
 import com.picvi.pet_companion_service.medical.dto.PlanVisitRequest;
 import com.picvi.pet_companion_service.medical.dto.UpcomingVisitsResponse;
 import com.picvi.pet_companion_service.medical.dto.VetVisitDto;
+import com.picvi.pet_companion_service.medical.dto.VisitHistoryPage;
 import com.picvi.pet_companion_service.medical.entity.VetVisit;
 import com.picvi.pet_companion_service.medical.repository.VetVisitRepository;
 import com.picvi.pet_companion_service.medication.api.MedicationApi;
@@ -27,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -80,7 +84,7 @@ class VetVisitServiceTest {
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-10-15T10:00:00Z"), ZoneId.of("Europe/Warsaw"));
         this.service = new VetVisitService(this.clientDateValidator, this.petService, this.repository, new VetVisitRules(),
-                new VisitOutcomeRule(), this.dayEventApi, this.careApi, this.petLogApi, this.petLogRecorder, this.medicationApi,
+                new VisitOutcomeRule(), new VisitHistoryPaging(), this.dayEventApi, this.careApi, this.petLogApi, this.petLogRecorder, this.medicationApi,
                 new VisitLinksReader(this.careApi, this.petLogApi, this.medicationApi), new VetAppointmentRule(), clock);
         lenient().when(this.petService.getOwnedPetProfile(OWNER, PET)).thenReturn(
                 new PetProfile(PET, "Mila", BORN, null, TODAY, null, null, 0));
@@ -242,6 +246,34 @@ class VetVisitServiceTest {
         assertThat(response.plans()).isEmpty();
         assertThat(response.lastVisit()).isNull();
         assertThat(response.nextVetAppointment()).isNull();
+    }
+
+    @Test
+    void historyReadsLinksOncePerModuleAndMarksTheNextPage() {
+        List<VetVisit> rows = List.of(doneOn(TODAY), doneOn(TODAY.minusDays(1)), doneOn(TODAY.minusDays(2)));
+        when(this.repository.findAllByPetIdAndStatusAndVisitedOnLessThanOrderByVisitedOnDescCreatedAtDesc(
+                eq(PET), eq(VisitStatus.DONE), any(), any())).thenReturn(rows);
+
+        VisitHistoryPage page = this.service.history(OWNER, PET, null, 2);
+
+        assertThat(page.visits()).extracting(VetVisitDto::visitedOn).containsExactly(TODAY, TODAY.minusDays(1));
+        assertThat(page.nextBefore()).isEqualTo(TODAY.minusDays(1));
+        verify(this.careApi).events(eq(PET), any());
+        verify(this.petLogApi).snapshots(eq(PET), any());
+        verify(this.medicationApi).courses(eq(PET), any(), any());
+    }
+
+    @Test
+    void historyOfAnotherPetsVisitsIsRefused() {
+        when(this.petService.getOwnedPetProfile(OWNER, PET)).thenThrow(new PetNotFound());
+
+        assertThatThrownBy(() -> this.service.history(OWNER, PET, null, null)).isInstanceOf(PetNotFound.class);
+    }
+
+    private static VetVisit doneOn(LocalDate day) {
+        VetVisit visit = VetVisit.done(PET, UUID.randomUUID(), day, "VetCare", Instant.parse("2026-10-15T10:00:00Z"));
+        ReflectionTestUtils.setField(visit, "id", UUID.randomUUID());
+        return visit;
     }
 
     private static PlanVisitRequest plan(UUID clientId) {

@@ -6,6 +6,7 @@ import com.picvi.pet_companion_service.medical.dto.LogVisitRequest;
 import com.picvi.pet_companion_service.medical.dto.PlanVisitRequest;
 import com.picvi.pet_companion_service.medical.dto.UpcomingVisitsResponse;
 import com.picvi.pet_companion_service.medical.dto.VetVisitDto;
+import com.picvi.pet_companion_service.medical.dto.VisitHistoryPage;
 import com.picvi.pet_companion_service.medical.service.VetVisitService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,14 @@ public class VetVisitController {
             return null;
         }
         return ResponseEntity.ok().eTag(etag).cacheControl(CacheControl.noCache()).body(body);
+    }
+
+    @GetMapping
+    public VisitHistoryPage history(@AuthenticationPrincipal UUID userId,
+                                    @PathVariable UUID petId,
+                                    @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate before,
+                                    @RequestParam(required = false) Integer size) {
+        return this.visitService.history(userId, petId, before, size);
     }
 
     @GetMapping("/{visitId}")

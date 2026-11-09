@@ -19,6 +19,8 @@ public interface PetLogRepository extends JpaRepository<PetLog, UUID> {
 
     Optional<PetLog> findByIdAndPetId(UUID id, UUID petId);
 
+    List<PetLog> findAllByPetIdAndIdIn(UUID petId, Collection<UUID> ids);
+
     Optional<PetLog> findByCourseIdAndDoseOnAndDoseMinute(UUID courseId, LocalDate doseOn, Integer doseMinute);
 
     List<PetLog> findAllByCourseIdInAndDoseOnBetween(Collection<UUID> courseIds, LocalDate from, LocalDate to);

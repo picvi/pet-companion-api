@@ -147,6 +147,17 @@ public class PetLogApi {
                         last -> new CourseDoseTotals(counts.get(last.getCourseId()).intValue(), last.getLocalDate(), last.getMinuteOfDay())));
     }
 
+    /** The given logs of a pet, in no particular order. Ids that are not the pet's logs are left out. */
+    @Transactional(readOnly = true)
+    public List<LogSnapshot> snapshots(UUID petId, Collection<UUID> logIds) {
+        if (logIds.isEmpty()) {
+            return List.of();
+        }
+        return this.logRepository.findAllByPetIdAndIdIn(petId, logIds).stream()
+                .map(LogSnapshot::of)
+                .toList();
+    }
+
     /** The last meals logged, newest first. */
     @Transactional(readOnly = true)
     public List<LogSnapshot> lastMeals(UUID petId, int count) {

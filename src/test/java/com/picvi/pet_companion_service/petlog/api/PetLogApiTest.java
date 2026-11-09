@@ -42,6 +42,16 @@ class PetLogApiTest {
     }
 
     @Test
+    void snapshotsAreReadInOneQueryAndSkippedWhenNoneAreAsked() {
+        PetLog weight = weight(2100, TODAY);
+        UUID id = UUID.randomUUID();
+        when(this.logRepository.findAllByPetIdAndIdIn(PET, List.of(id))).thenReturn(List.of(weight));
+
+        assertThat(this.api.snapshots(PET, List.of(id))).extracting(LogSnapshot::weightGrams).containsExactly(2100);
+        assertThat(this.api.snapshots(PET, List.of())).isEmpty();
+    }
+
+    @Test
     void lastTwoWeightsAreReturnedNewestFirst() {
         when(this.logRepository.findByPetIdAndTypeAndLocalDateLessThanEqualOrderByLocalDateDescMinuteOfDayDesc(
                 eq(PET), eq(LogType.WEIGHT), eq(TODAY), any())).thenReturn(List.of(

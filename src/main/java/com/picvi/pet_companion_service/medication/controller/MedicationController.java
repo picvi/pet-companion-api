@@ -1,5 +1,6 @@
 package com.picvi.pet_companion_service.medication.controller;
 
+import com.picvi.pet_companion_service.common.Etags;
 import com.picvi.pet_companion_service.exception.medication.InvalidCourse;
 import com.picvi.pet_companion_service.medication.dto.CourseDto;
 import com.picvi.pet_companion_service.medication.dto.CoursesResponse;
@@ -10,10 +11,12 @@ import com.picvi.pet_companion_service.medication.service.MedicationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -25,10 +28,16 @@ public class MedicationController {
     private final MedicationService medicationService;
 
     @GetMapping
-    public CoursesResponse list(@AuthenticationPrincipal UUID userId,
-                                @PathVariable UUID petId,
-                                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return this.medicationService.list(userId, petId, date);
+    public ResponseEntity<CoursesResponse> list(@AuthenticationPrincipal UUID userId,
+                                                @PathVariable UUID petId,
+                                                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                                WebRequest request) {
+        CoursesResponse body = this.medicationService.list(userId, petId, date);
+        String etag = Etags.of(body);
+        if (request.checkNotModified(etag)) {
+            return null;
+        }
+        return ResponseEntity.ok().eTag(etag).cacheControl(CacheControl.noCache()).body(body);
     }
 
     @GetMapping("/{courseId}")

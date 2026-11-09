@@ -92,6 +92,17 @@ public class DatabaseSeed {
         this.jdbc.update("insert into pet_log_flag (log_id, flag) values (?, 'NEW_FOOD')", logId);
         this.jdbc.update("insert into pet_log_change (log_id, pet_id, change, changed_at) values (?, ?, 'CREATED', ?)", logId, petId, NOW);
 
+        UUID course = UUID.randomUUID();
+        this.jdbc.update("""
+                insert into medication_course (id, pet_id, client_id, name, amount_hundredths, unit, schedule, with_food, starts_on, start_minute, created_at, updated_at)
+                values (?, ?, ?, 'Amoxicillin', 100, 'TABLET', 'DAILY', 'ANY', ?, 480, now(), now())
+                """, course, petId, UUID.randomUUID(), DAY);
+        this.jdbc.update("insert into medication_dose_time (course_id, minute_of_day) values (?, 480)", course);
+        this.jdbc.update("""
+                insert into pet_log (id, pet_id, client_id, type, local_date, minute_of_day, logged_by, created_at, occurred_at, utc_offset_minutes, course_id, dose_on, dose_minute)
+                values (?, ?, ?, 'MEDICINE', ?, 485, ?, now(), ?, 120, ?, ?, 480)
+                """, UUID.randomUUID(), petId, UUID.randomUUID(), DAY, userId, NOW, course, DAY);
+
         UUID product = this.foodProduct(userId);
         this.jdbc.update("insert into food_product_change (product_id, changed_by, changed_at, reason) values (?, ?, ?, 'CORRECTION')", product, userId, NOW);
         UUID oldFood = this.petFood(petId, product, userId);

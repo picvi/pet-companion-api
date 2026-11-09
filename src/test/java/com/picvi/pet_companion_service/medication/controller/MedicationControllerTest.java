@@ -7,6 +7,7 @@ import com.picvi.pet_companion_service.medication.domain.DoseSchedule;
 import com.picvi.pet_companion_service.medication.domain.DoseUnit;
 import com.picvi.pet_companion_service.medication.domain.WithFood;
 import com.picvi.pet_companion_service.medication.dto.CourseDto;
+import com.picvi.pet_companion_service.medication.dto.CoursesResponse;
 import com.picvi.pet_companion_service.medication.service.MedicationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,8 +27,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -51,6 +54,18 @@ class MedicationControllerTest {
         this.service = mock(MedicationService.class);
         this.mvc = MockMvcBuilders.standaloneSetup(new MedicationController(this.service))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
+    }
+
+    @Test
+    void theListComesWithAnETagAndAnswersNotModifiedWhenItStillMatches() throws Exception {
+        when(this.service.list(any(), eq(PET), any())).thenReturn(new CoursesResponse(LocalDate.of(2026, 10, 18), List.of(dto())));
+        String etag = this.mvc.perform(get("/pets/{petId}/medications", PET).param("date", "2026-10-18"))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("ETag"))
+                .andReturn().getResponse().getHeader("ETag");
+
+        this.mvc.perform(get("/pets/{petId}/medications", PET).param("date", "2026-10-18").header("If-None-Match", etag))
+                .andExpect(status().isNotModified());
     }
 
     @Test

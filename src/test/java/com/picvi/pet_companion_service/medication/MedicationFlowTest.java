@@ -133,7 +133,7 @@ class MedicationFlowTest extends PostgresTest {
     }
 
     @Test
-    void aCourseWithoutDosesCanBeDeletedAndItsLogsStayWhenItIsGone() {
+    void aCourseWithoutDosesCanBeDeleted() {
         CourseDto course = this.startCourse();
 
         this.medicationService.delete(this.owner, this.pet, course.id());

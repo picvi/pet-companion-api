@@ -1,7 +1,5 @@
 package com.picvi.pet_companion_service.dayevent.repository;
 
-import com.picvi.pet_companion_service.dayevent.domain.DayEventType;
-import com.picvi.pet_companion_service.dayevent.domain.Recurrence;
 import com.picvi.pet_companion_service.dayevent.entity.PetDayEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -23,7 +21,4 @@ public interface PetDayEventRepository extends JpaRepository<PetDayEvent, UUID> 
     List<PetDayEvent> findPossiblyOccurringOn(UUID petId, LocalDate date);
 
     List<PetDayEvent> findAllByPetIdOrderByLocalDateAscStartMinuteAsc(UUID petId);
-
-    List<PetDayEvent> findAllByPetIdAndTypeAndRecurrenceAndLocalDateGreaterThanEqual(UUID petId, DayEventType type,
-                                                                                     Recurrence recurrence, LocalDate from);
 }

@@ -13,8 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -72,17 +70,6 @@ public class DayEventApi {
                 .map(this::appointment)
                 .flatMap(Optional::stream)
                 .collect(Collectors.toMap(VetAppointment::eventId, Function.identity()));
-    }
-
-    @Transactional(readOnly = true)
-    public List<VetAppointment> vetAppointmentsFrom(UUID petId, LocalDate from) {
-        return this.eventRepository
-                .findAllByPetIdAndTypeAndRecurrenceAndLocalDateGreaterThanEqual(petId, DayEventType.VET, Recurrence.NONE, from)
-                .stream()
-                .map(this::appointment)
-                .flatMap(Optional::stream)
-                .sorted(Comparator.comparing(VetAppointment::on).thenComparingInt(VetAppointment::startMinute))
-                .toList();
     }
 
     private Optional<VetAppointment> appointment(PetDayEvent event) {

@@ -32,6 +32,7 @@ import com.picvi.pet_companion_service.exception.condition.InvalidCondition;
 import com.picvi.pet_companion_service.exception.nutrition.FoodNotTriable;
 import com.picvi.pet_companion_service.exception.nutrition.InvalidTriedFood;
 import com.picvi.pet_companion_service.exception.nutrition.SafetyFoodNotFound;
+import com.picvi.pet_companion_service.exception.dayevent.UseVetPlan;
 import com.picvi.pet_companion_service.exception.medical.InvalidVetVisit;
 import com.picvi.pet_companion_service.exception.medical.VetVisitNotFound;
 import com.picvi.pet_companion_service.exception.medication.CourseHasDoses;
@@ -345,6 +346,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidTriedFood.class)
     public ResponseEntity<ErrorResponse> handleInvalidTriedFood(InvalidTriedFood ex) {
         return error(HttpStatus.BAD_REQUEST, ex);
+    }
+
+    @ExceptionHandler(UseVetPlan.class)
+    public ResponseEntity<ErrorResponse> handleUseVetPlan(UseVetPlan ex) {
+        return error(HttpStatus.UNPROCESSABLE_ENTITY, ex);
     }
 
     @ExceptionHandler(VetVisitNotFound.class)

@@ -62,6 +62,7 @@ public class VetVisit {
     private boolean justCheck;
 
     @Getter
+    @Setter
     @Column(name = "follow_up_of")
     private UUID followUpOf;
 
@@ -171,5 +172,36 @@ public class VetVisit {
 
     public boolean isPlanned() {
         return this.status == VisitStatus.PLANNED;
+    }
+
+    /** Turns a plan into a visit that happened, or changes the own fields of one that did. */
+    public void record(LocalDate visitedOn, String clinic, String note, boolean justCheck, Instant now) {
+        this.status = VisitStatus.DONE;
+        this.visitedOn = visitedOn;
+        this.clinic = clinic;
+        this.note = note;
+        this.justCheck = justCheck;
+        this.updatedAt = now;
+    }
+
+    public void replaceTests(Map<VisitTestKind, Boolean> tests) {
+        this.tests.clear();
+        this.tests.putAll(tests);
+    }
+
+    public void replaceProcedure(VisitProcedure procedure) {
+        this.procedures.clear();
+        if (procedure != null) {
+            this.procedures.add(procedure);
+        }
+    }
+
+    public void setOutcomes(Set<VisitOutcome> outcomes) {
+        this.outcomes = EnumSet.noneOf(VisitOutcome.class);
+        this.outcomes.addAll(outcomes);
+    }
+
+    public boolean hasLog(VisitLogRole role) {
+        return this.logs.containsValue(role);
     }
 }

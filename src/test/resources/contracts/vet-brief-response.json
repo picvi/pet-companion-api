@@ -51,7 +51,7 @@
     }
   ],
   "care": { "vaccines": [], "parasites": [] },
-  "lastVisit": { "id": "0199a1e2-7c3b-7a10-8e55-3f0c2d9a41b9", "visitedOn": "2026-09-28", "reason": "CHECK_UP", "outcomes": ["FINE"], "clinic": "VetCare Mokotow" },
+  "lastVisit": { "id": "0199a1e2-7c3b-7a10-8e55-3f0c2d9a41b9", "visitedOn": "2026-09-28", "outcomes": ["FINE"], "clinic": "VetCare Mokotow" },
   "suggestedQuestions": [
     { "code": "DIARRHOEA_CAUSE" },
     { "code": "DIARRHOEA_WHEN_URGENT" },

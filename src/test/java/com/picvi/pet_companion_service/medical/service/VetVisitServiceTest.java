@@ -9,7 +9,6 @@ import com.picvi.pet_companion_service.medical.domain.AppointmentStatus;
 import com.picvi.pet_companion_service.medical.domain.VetAppointmentRule;
 import com.picvi.pet_companion_service.medical.domain.VetVisitRules;
 import com.picvi.pet_companion_service.medical.domain.VisitOutcome;
-import com.picvi.pet_companion_service.medical.domain.VisitReason;
 import com.picvi.pet_companion_service.medical.dto.CreateVetVisitRequest;
 import com.picvi.pet_companion_service.medical.dto.UpdateVetVisitRequest;
 import com.picvi.pet_companion_service.medical.dto.VetVisitDto;
@@ -130,8 +129,8 @@ class VetVisitServiceTest {
 
     @Test
     void tooLongNoteAndClinicAreRejected() {
-        CreateVetVisitRequest longNote = new CreateVetVisitRequest(UUID.randomUUID(), TODAY, TODAY, VisitReason.CHECK_UP, null, null, "x".repeat(501), null, null, null);
-        CreateVetVisitRequest longClinic = new CreateVetVisitRequest(UUID.randomUUID(), TODAY, TODAY, VisitReason.CHECK_UP, null, "x".repeat(121), null, null, null, null);
+        CreateVetVisitRequest longNote = new CreateVetVisitRequest(UUID.randomUUID(), TODAY, TODAY, null, null, "x".repeat(501), null, null, null);
+        CreateVetVisitRequest longClinic = new CreateVetVisitRequest(UUID.randomUUID(), TODAY, TODAY, null, "x".repeat(121), null, null, null, null);
 
         assertThatThrownBy(() -> this.service.create(OWNER, PET, longNote)).hasMessage("note: TOO_LONG");
         assertThatThrownBy(() -> this.service.create(OWNER, PET, longClinic)).hasMessage("clinic: TOO_LONG");
@@ -157,7 +156,6 @@ class VetVisitServiceTest {
         var dto = this.service.update(OWNER, PET, id, visit.getVersion(), update());
 
         assertThat(dto.clinic()).isEqualTo("VetCare");
-        assertThat(dto.reason()).isEqualTo(VisitReason.VACCINE_OR_TREATMENT);
     }
 
     @Test
@@ -240,7 +238,7 @@ class VetVisitServiceTest {
         this.service.update(OWNER, PET, id, visit.getVersion(), update());
 
         verify(this.dayEventApi).cancel(PET, EVENT);
-        assertThat(visit.getNextCheckEventId()).isNull();
+        assertThat(visit.getDayEventId()).isNull();
     }
 
     @Test
@@ -253,7 +251,7 @@ class VetVisitServiceTest {
 
         this.service.update(OWNER, PET, id, visit.getVersion(), update());
 
-        assertThat(visit.getNextCheckEventId()).isNull();
+        assertThat(visit.getDayEventId()).isNull();
     }
 
     @Test
@@ -309,7 +307,7 @@ class VetVisitServiceTest {
 
         VetVisitDto dto = this.service.update(OWNER, PET, id, visit.getVersion(), update(NEXT, MINUTE));
 
-        assertThat(visit.getNextCheckEventId()).isEqualTo(EVENT);
+        assertThat(visit.getDayEventId()).isEqualTo(EVENT);
         assertThat(dto.nextCheckMinute()).isEqualTo(MINUTE);
     }
 
@@ -325,7 +323,7 @@ class VetVisitServiceTest {
 
         this.service.update(OWNER, PET, id, visit.getVersion(), update(NEXT, MINUTE));
 
-        assertThat(visit.getNextCheckEventId()).isEqualTo(newEvent);
+        assertThat(visit.getDayEventId()).isEqualTo(newEvent);
     }
 
     @Test
@@ -386,7 +384,7 @@ class VetVisitServiceTest {
 
     private static CreateVetVisitRequest create(UUID clientId, LocalDate visitedOn, LocalDate nextCheckOn, Integer nextCheckMinute,
                                                 List<VisitOutcome> outcomes) {
-        return new CreateVetVisitRequest(clientId, TODAY, visitedOn, VisitReason.SOMETHING_WRONG, outcomes, "VetCare", null,
+        return new CreateVetVisitRequest(clientId, TODAY, visitedOn, outcomes, "VetCare", null,
                 nextCheckOn, nextCheckMinute, null);
     }
 
@@ -395,7 +393,7 @@ class VetVisitServiceTest {
     }
 
     private static UpdateVetVisitRequest update(LocalDate nextCheckOn, Integer nextCheckMinute) {
-        return new UpdateVetVisitRequest(TODAY, TODAY, VisitReason.VACCINE_OR_TREATMENT, List.of(), "VetCare", null, nextCheckOn,
+        return new UpdateVetVisitRequest(TODAY, TODAY, List.of(), "VetCare", null, nextCheckOn,
                 nextCheckMinute, null);
     }
 
@@ -405,12 +403,12 @@ class VetVisitServiceTest {
 
     private VetVisit visitWithAppointment() {
         VetVisit visit = visit(UUID.randomUUID());
-        visit.setNextCheckEventId(EVENT);
+        visit.setDayEventId(EVENT);
         return visit;
     }
 
     private static VetVisit visit(UUID clientId) {
-        return new VetVisit(PET, clientId, TODAY, VisitReason.CHECK_UP, EnumSet.noneOf(VisitOutcome.class), null, null, null,
+        return new VetVisit(PET, clientId, TODAY, EnumSet.noneOf(VisitOutcome.class), null, null, null,
                 TODAY.atStartOfDay(ZoneOffset.UTC).toInstant());
     }
 }

@@ -11,7 +11,6 @@ import com.picvi.pet_companion_service.nutrition.api.FoodChangeEvent;
 import com.picvi.pet_companion_service.medical.api.MedicalApi;
 import com.picvi.pet_companion_service.lostdog.service.LostDogService;
 import com.picvi.pet_companion_service.medical.domain.VisitOutcome;
-import com.picvi.pet_companion_service.medical.domain.VisitReason;
 import com.picvi.pet_companion_service.nutrition.api.NutritionApi;
 import com.picvi.pet_companion_service.pet.service.PetService;
 import com.picvi.pet_companion_service.petlog.domain.LogCursor;
@@ -236,7 +235,7 @@ class TimelineServiceTest {
     void aVisitSitsAfterTheLogsOfItsDayAndOnlyShowsInTheAllView() {
         PetLogDto log = log(TODAY, 570, LogType.MEAL, 0);
         when(this.logService.timelinePage(any(), any(), anyBoolean(), any(), anyInt())).thenReturn(List.of(log));
-        MedicalApi.VisitSnapshot visit = new MedicalApi.VisitSnapshot(UUID.randomUUID(), TODAY, VisitReason.SOMETHING_WRONG,
+        MedicalApi.VisitSnapshot visit = new MedicalApi.VisitSnapshot(UUID.randomUUID(), TODAY,
                 List.of(VisitOutcome.TREATMENT), "VetCare");
         when(this.medicalApi.visitsBetween(eq(PET_ID), any(), any())).thenReturn(List.of(visit));
 
@@ -252,8 +251,8 @@ class TimelineServiceTest {
     @Test
     void pagingPastAVisitDoesNotRepeatIt() {
         this.fakeSources(List.of(), List.of(), List.of());
-        MedicalApi.VisitSnapshot newer = new MedicalApi.VisitSnapshot(UUID.randomUUID(), TODAY, VisitReason.CHECK_UP, List.of(), null);
-        MedicalApi.VisitSnapshot older = new MedicalApi.VisitSnapshot(UUID.randomUUID(), TODAY.minusDays(2), VisitReason.CHECK_UP, List.of(), null);
+        MedicalApi.VisitSnapshot newer = new MedicalApi.VisitSnapshot(UUID.randomUUID(), TODAY, List.of(), null);
+        MedicalApi.VisitSnapshot older = new MedicalApi.VisitSnapshot(UUID.randomUUID(), TODAY.minusDays(2), List.of(), null);
         when(this.medicalApi.visitsBetween(eq(PET_ID), any(), any())).thenReturn(List.of(newer, older));
 
         TimelineResponse next = this.service.page(OWNER_ID, PET_ID, TODAY, TimelineFilter.ALL, "2026-10-14,0,VISIT," + newer.id());

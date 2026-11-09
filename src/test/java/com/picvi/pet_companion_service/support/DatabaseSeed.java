@@ -127,8 +127,8 @@ public class DatabaseSeed {
                 """, dayEvent, petId, DAY);
         this.jdbc.update("insert into pet_day_event_exception (id, event_id, local_date, skipped) values (?, ?, ?, true)", UUID.randomUUID(), dayEvent, DAY);
         this.jdbc.update("""
-                insert into pet_vet_visit (id, pet_id, client_id, visited_on, reason, next_check_event_id, created_at, updated_at)
-                values (?, ?, ?, ?, 'CHECK_UP', ?, now(), now())
+                insert into pet_vet_visit (id, pet_id, client_id, visited_on, day_event_id, created_at, updated_at)
+                values (?, ?, ?, ?, ?, now(), now())
                 """, UUID.randomUUID(), petId, UUID.randomUUID(), DAY, dayEvent);
 
         String careItem = this.jdbc.queryForObject("select min(code) from care_item", String.class);

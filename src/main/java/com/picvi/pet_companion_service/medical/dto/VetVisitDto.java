@@ -3,7 +3,6 @@ package com.picvi.pet_companion_service.medical.dto;
 import com.picvi.pet_companion_service.dayevent.api.DayEventApi;
 import com.picvi.pet_companion_service.medical.domain.BriefHelpful;
 import com.picvi.pet_companion_service.medical.domain.VisitOutcome;
-import com.picvi.pet_companion_service.medical.domain.VisitReason;
 import com.picvi.pet_companion_service.medical.entity.VetVisit;
 
 import java.time.LocalDate;
@@ -14,7 +13,6 @@ import java.util.UUID;
 public record VetVisitDto(UUID id,
                           UUID clientId,
                           LocalDate visitedOn,
-                          VisitReason reason,
                           List<VisitOutcome> outcomes,
                           String clinic,
                           String note,
@@ -24,7 +22,7 @@ public record VetVisitDto(UUID id,
                           long version) {
 
     public static VetVisitDto of(VetVisit visit, DayEventApi.VetAppointment appointment) {
-        return new VetVisitDto(visit.getId(), visit.getClientId(), visit.getVisitedOn(), visit.getReason(),
+        return new VetVisitDto(visit.getId(), visit.getClientId(), visit.getVisitedOn(),
                 visit.getOutcomes().stream().sorted(Comparator.naturalOrder()).toList(), visit.getClinic(), visit.getNote(),
                 appointment == null ? null : appointment.on(), appointment == null ? null : appointment.startMinute(),
                 visit.getBriefHelpful(), visit.getVersion());

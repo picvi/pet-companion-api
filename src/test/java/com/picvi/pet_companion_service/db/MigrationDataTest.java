@@ -40,6 +40,70 @@ class MigrationDataTest {
         }
     }
 
+    @Test
+    void aBookedNextCheckBecomesAPlannedVisitThatFollowsUpTheLoggedOne() throws IOException {
+        try (EmbeddedPostgres postgres = EmbeddedPostgres.start()) {
+            DataSource dataSource = postgres.getPostgresDatabase();
+            this.flyway(dataSource, "37").migrate();
+            JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+            DatabaseSeed seed = new DatabaseSeed(jdbc);
+            UUID pet = seed.pet(seed.user());
+            UUID event = this.vetEvent(jdbc, pet, "2026-11-20", 540);
+            UUID loggedVisit = this.oldVisit(jdbc, pet, "2026-11-01", "VetCare", event);
+
+            this.flyway(dataSource, null).migrate();
+
+            List<Map<String, Object>> visits = jdbc.queryForList(
+                    "select id, status, scheduled_minute, follow_up_of, day_event_id, visited_on, clinic from pet_vet_visit where pet_id = ? order by status",
+                    pet);
+            assertThat(visits).hasSize(2);
+            Map<String, Object> done = visits.get(0);
+            Map<String, Object> planned = visits.get(1);
+            assertThat(done).containsEntry("id", loggedVisit).containsEntry("status", "DONE").containsEntry("day_event_id", null);
+            assertThat(planned).containsEntry("status", "PLANNED").containsEntry("scheduled_minute", 540)
+                    .containsEntry("follow_up_of", loggedVisit).containsEntry("day_event_id", event)
+                    .containsEntry("clinic", "VetCare");
+            assertThat(planned.get("visited_on").toString()).isEqualTo("2026-11-20");
+        }
+    }
+
+    @Test
+    void aVetEventAddedStraightInHerDayBecomesAPlannedVisit() throws IOException {
+        try (EmbeddedPostgres postgres = EmbeddedPostgres.start()) {
+            DataSource dataSource = postgres.getPostgresDatabase();
+            this.flyway(dataSource, "37").migrate();
+            JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+            DatabaseSeed seed = new DatabaseSeed(jdbc);
+            UUID pet = seed.pet(seed.user());
+            UUID event = this.vetEvent(jdbc, pet, "2026-11-20", 600);
+
+            this.flyway(dataSource, null).migrate();
+
+            Map<String, Object> visit = jdbc.queryForMap(
+                    "select status, scheduled_minute, day_event_id, follow_up_of from pet_vet_visit where pet_id = ?", pet);
+            assertThat(visit).containsEntry("status", "PLANNED").containsEntry("scheduled_minute", 600)
+                    .containsEntry("day_event_id", event).containsEntry("follow_up_of", null);
+        }
+    }
+
+    private UUID vetEvent(JdbcTemplate jdbc, UUID pet, String date, int minute) {
+        UUID id = UUID.randomUUID();
+        jdbc.update("""
+                insert into pet_day_event (id, pet_id, type, local_date, start_minute, duration_minutes, recurrence, plan_around, created_at)
+                values (?, ?, 'VET', ?::date, ?, 60, 'NONE', true, now())
+                """, id, pet, date, minute);
+        return id;
+    }
+
+    private UUID oldVisit(JdbcTemplate jdbc, UUID pet, String visitedOn, String clinic, UUID event) {
+        UUID id = UUID.randomUUID();
+        jdbc.update("""
+                insert into pet_vet_visit (id, pet_id, client_id, visited_on, reason, outcomes, clinic, next_check_event_id, version, created_at, updated_at)
+                values (?, ?, ?, ?::date, 'CHECK_UP', 'FINE', ?, ?, 0, now(), now())
+                """, id, pet, UUID.randomUUID(), visitedOn, clinic, event);
+        return id;
+    }
+
     private Flyway flyway(DataSource dataSource, String target) {
         var configuration = Flyway.configure().dataSource(dataSource).locations("classpath:db/migration");
         if (target != null) {

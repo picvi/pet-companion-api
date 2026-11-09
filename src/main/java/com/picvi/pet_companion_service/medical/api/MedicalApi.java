@@ -1,7 +1,6 @@
 package com.picvi.pet_companion_service.medical.api;
 
 import com.picvi.pet_companion_service.medical.domain.VisitOutcome;
-import com.picvi.pet_companion_service.medical.domain.VisitReason;
 import com.picvi.pet_companion_service.medical.entity.VetVisit;
 import com.picvi.pet_companion_service.medical.repository.VetVisitRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +19,9 @@ import java.util.UUID;
 public class MedicalApi {
     private final VetVisitRepository repository;
 
-    public record VisitSnapshot(UUID id, LocalDate visitedOn, VisitReason reason, List<VisitOutcome> outcomes, String clinic) {
+    public record VisitSnapshot(UUID id, LocalDate visitedOn, List<VisitOutcome> outcomes, String clinic) {
         static VisitSnapshot of(VetVisit visit) {
-            return new VisitSnapshot(visit.getId(), visit.getVisitedOn(), visit.getReason(),
+            return new VisitSnapshot(visit.getId(), visit.getVisitedOn(),
                     visit.getOutcomes().stream().sorted(Comparator.naturalOrder()).toList(), visit.getClinic());
         }
     }

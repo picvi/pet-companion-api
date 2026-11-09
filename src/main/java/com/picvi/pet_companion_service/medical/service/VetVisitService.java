@@ -57,12 +57,12 @@ public class VetVisitService {
         List<DayEventApi.VetAppointment> fromDay = this.dayEventApi.vetAppointmentsFrom(petId,
                 date.minusDays(VetAppointmentRule.PASSED_VISIBLE_DAYS));
         Map<UUID, DayEventApi.VetAppointment> linked = this.dayEventApi.vetAppointments(petId, visits.stream()
-                .map(VetVisit::getNextCheckEventId)
+                .map(VetVisit::getDayEventId)
                 .filter(Objects::nonNull)
                 .toList());
         Map<UUID, UUID> bookedBy = visits.stream()
-                .filter(visit -> visit.getNextCheckEventId() != null)
-                .collect(Collectors.toMap(VetVisit::getNextCheckEventId, VetVisit::getId));
+                .filter(visit -> visit.getDayEventId() != null)
+                .collect(Collectors.toMap(VetVisit::getDayEventId, VetVisit::getId));
         List<BookedAppointment> booked = fromDay.stream()
                 .map(appointment -> new BookedAppointment(appointment.eventId(), appointment.on(), appointment.startMinute(),
                         bookedBy.get(appointment.eventId())))
@@ -91,10 +91,10 @@ public class VetVisitService {
         String note = blankToNull(request.note());
         this.rules.validate(request.visitedOn(), request.nextCheckOn(), request.nextCheckMinute(), request.outcomes(), clinic, note,
                 pet.birthDate(), request.date());
-        VetVisit visit = new VetVisit(petId, request.clientId(), request.visitedOn(), request.reason(),
+        VetVisit visit = new VetVisit(petId, request.clientId(), request.visitedOn(),
                 outcomeSet(request.outcomes()), clinic, note, request.briefHelpful(), this.clock.instant());
         if (request.nextCheckOn() != null) {
-            visit.setNextCheckEventId(
+            visit.setDayEventId(
                     this.dayEventApi.scheduleVet(petId, request.nextCheckOn(), request.nextCheckMinute(), request.date()));
         }
         VetVisit saved = this.repository.saveAndFlush(visit);
@@ -116,7 +116,7 @@ public class VetVisitService {
         String note = blankToNull(request.note());
         this.rules.validate(request.visitedOn(), unchanged ? null : request.nextCheckOn(),
                 unchanged ? null : request.nextCheckMinute(), request.outcomes(), clinic, note, pet.birthDate(), request.date());
-        visit.replace(request.visitedOn(), request.reason(), outcomeSet(request.outcomes()), clinic, note, request.briefHelpful(),
+        visit.replace(request.visitedOn(), outcomeSet(request.outcomes()), clinic, note, request.briefHelpful(),
                 this.clock.instant());
         this.syncAppointment(petId, visit, current, unchanged, request);
         VetVisit saved = this.repository.saveAndFlush(visit);
@@ -126,8 +126,8 @@ public class VetVisitService {
     public void delete(UUID ownerId, UUID petId, UUID visitId) {
         this.petService.getOwnedPetProfile(ownerId, petId);
         this.repository.findByIdAndPetId(visitId, petId).ifPresent(visit -> {
-            if (visit.getNextCheckEventId() != null) {
-                this.dayEventApi.cancel(petId, visit.getNextCheckEventId());
+            if (visit.getDayEventId() != null) {
+                this.dayEventApi.cancel(petId, visit.getDayEventId());
             }
             this.repository.delete(visit);
         });
@@ -136,12 +136,12 @@ public class VetVisitService {
     private void syncAppointment(UUID petId, VetVisit visit, DayEventApi.VetAppointment current, boolean unchanged,
                                  UpdateVetVisitRequest request) {
         if (request.nextCheckOn() == null) {
-            if (visit.getNextCheckEventId() != null) {
-                this.dayEventApi.cancel(petId, visit.getNextCheckEventId());
+            if (visit.getDayEventId() != null) {
+                this.dayEventApi.cancel(petId, visit.getDayEventId());
             }
-            visit.setNextCheckEventId(null);
+            visit.setDayEventId(null);
         } else if (current == null) {
-            visit.setNextCheckEventId(
+            visit.setDayEventId(
                     this.dayEventApi.scheduleVet(petId, request.nextCheckOn(), request.nextCheckMinute(), request.date()));
         } else if (!unchanged) {
             this.dayEventApi.rescheduleVet(petId, current.eventId(), request.nextCheckOn(), request.nextCheckMinute(), request.date());
@@ -149,7 +149,7 @@ public class VetVisitService {
     }
 
     private DayEventApi.VetAppointment appointmentOf(UUID petId, VetVisit visit) {
-        UUID eventId = visit.getNextCheckEventId();
+        UUID eventId = visit.getDayEventId();
         if (eventId == null) {
             return null;
         }
@@ -157,7 +157,7 @@ public class VetVisitService {
     }
 
     private static DayEventApi.VetAppointment linkedAppointment(Map<UUID, DayEventApi.VetAppointment> linked, VetVisit visit) {
-        return visit.getNextCheckEventId() == null ? null : linked.get(visit.getNextCheckEventId());
+        return visit.getDayEventId() == null ? null : linked.get(visit.getDayEventId());
     }
 
     private static Set<VisitOutcome> outcomeSet(List<VisitOutcome> outcomes) {

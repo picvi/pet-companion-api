@@ -2,7 +2,6 @@ package com.picvi.pet_companion_service.medical.dto;
 
 import com.picvi.pet_companion_service.medical.domain.BriefHelpful;
 import com.picvi.pet_companion_service.medical.domain.VisitOutcome;
-import com.picvi.pet_companion_service.medical.domain.VisitReason;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
@@ -11,7 +10,6 @@ import java.util.List;
 /** A full replace of the editable fields. {@code date} is the client's today. */
 public record UpdateVetVisitRequest(@NotNull LocalDate date,
                                     @NotNull LocalDate visitedOn,
-                                    @NotNull VisitReason reason,
                                     List<VisitOutcome> outcomes,
                                     String clinic,
                                     String note,

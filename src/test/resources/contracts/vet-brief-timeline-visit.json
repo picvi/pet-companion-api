@@ -3,5 +3,5 @@
   "id": "0199a1e2-7c3b-7a10-8e55-3f0c2d9a41b7",
   "localDate": "2026-10-15",
   "minuteOfDay": 0,
-  "visit": { "reason": "SOMETHING_WRONG", "outcomes": ["TREATMENT"], "clinic": "VetCare Mokotow" }
+  "visit": { "outcomes": ["TREATMENT"], "clinic": "VetCare Mokotow" }
 }

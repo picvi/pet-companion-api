@@ -21,7 +21,6 @@ import com.picvi.pet_companion_service.exception.brief.InvalidBriefRequest;
 import com.picvi.pet_companion_service.exception.pet.PetNotFound;
 import com.picvi.pet_companion_service.medical.api.MedicalApi;
 import com.picvi.pet_companion_service.medical.api.MedicalApi.VisitSnapshot;
-import com.picvi.pet_companion_service.medical.domain.VisitReason;
 import com.picvi.pet_companion_service.nutrition.api.NutritionApi;
 import com.picvi.pet_companion_service.nutrition.domain.IngredientCode;
 import com.picvi.pet_companion_service.nutrition.dto.DietHistoryResponse;
@@ -251,7 +250,7 @@ class VetBriefServiceTest {
     void briefCarriesTheLastVisitOpenConditionsAndWeights() {
         this.ownedPet();
         this.emptyBriefSources();
-        VisitSnapshot visit = new VisitSnapshot(UUID.randomUUID(), LocalDate.of(2026, 9, 28), VisitReason.CHECK_UP, List.of(), "VetCare");
+        VisitSnapshot visit = new VisitSnapshot(UUID.randomUUID(), LocalDate.of(2026, 9, 28), List.of(), "VetCare");
         when(this.medicalApi.lastVisit(PET, TODAY)).thenReturn(Optional.of(visit));
         when(this.conditionApi.openConditions(PET, TODAY)).thenReturn(List.of(new ConditionSnapshot(ConditionKind.ALLERGY,
                 IngredientCode.CHICKEN, ConditionCertainty.SUSPECTED, null, LocalDate.of(2026, 9, 20))));

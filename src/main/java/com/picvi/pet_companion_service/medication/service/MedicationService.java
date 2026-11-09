@@ -111,6 +111,19 @@ public class MedicationService {
         });
     }
 
+    /** A course nobody has given a dose of disappears; one that has history is only stopped. Unknown courses are ignored. */
+    public void stopOrDelete(UUID ownerId, UUID petId, UUID courseId, LocalDate date, int minuteOfDay) {
+        this.clientDateValidator.validate(date);
+        this.petService.getOwnedPetProfile(ownerId, petId);
+        this.repository.findByIdAndPetId(courseId, petId).ifPresent(course -> {
+            if (this.hasDoses(courseId)) {
+                course.stop(date, minuteOfDay, this.clock.instant());
+                return;
+            }
+            this.repository.delete(course);
+        });
+    }
+
     private boolean hasDoses(UUID courseId) {
         return this.petLogApi.courseDoseTotals(List.of(courseId)).containsKey(courseId);
     }

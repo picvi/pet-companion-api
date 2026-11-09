@@ -214,6 +214,38 @@ class MedicationServiceTest {
         verify(this.repository, never()).delete(any());
     }
 
+    @Test
+    void aCourseWithDosesIsOnlyStoppedWhenItsStartIsDiscarded() {
+        MedicationCourse course = this.course();
+        when(this.repository.findByIdAndPetId(COURSE, PET)).thenReturn(Optional.of(course));
+        when(this.petLogApi.courseDoseTotals(List.of(COURSE))).thenReturn(Map.of(COURSE, new CourseDoseTotals(1, TODAY, 1085)));
+
+        this.service.stopOrDelete(OWNER, PET, COURSE, TODAY, 600);
+
+        assertThat(course.getStoppedOn()).isEqualTo(TODAY);
+        verify(this.repository, never()).delete(any());
+    }
+
+    @Test
+    void aCourseWithoutDosesIsDeletedWhenItsStartIsDiscarded() {
+        MedicationCourse course = this.course();
+        when(this.repository.findByIdAndPetId(COURSE, PET)).thenReturn(Optional.of(course));
+        when(this.petLogApi.courseDoseTotals(List.of(COURSE))).thenReturn(Map.of());
+
+        this.service.stopOrDelete(OWNER, PET, COURSE, TODAY, 600);
+
+        verify(this.repository).delete(course);
+    }
+
+    @Test
+    void discardingAMissingCourseDoesNothing() {
+        when(this.repository.findByIdAndPetId(COURSE, PET)).thenReturn(Optional.empty());
+
+        this.service.stopOrDelete(OWNER, PET, COURSE, TODAY, 600);
+
+        verify(this.repository, never()).delete(any());
+    }
+
     private MedicationCourse course() {
         return withId(new MedicationCourse(PET, CLIENT, new CourseInputBuilder(TODAY).build(), true, CLOCK.instant()));
     }

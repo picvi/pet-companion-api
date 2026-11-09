@@ -35,7 +35,7 @@ class MigrationTest extends PostgresTest {
     @Test
     void aDoseAnswersAPlannedTimeOnlyOnce() {
         UUID[] pet = ownerAndPet();
-        UUID course = course(pet[1], "DAILY", null, null);
+        UUID course = course(pet[1], "DAILY", null);
         doseLog(pet, course, LocalDate.of(2026, 10, 1), 480);
 
         assertThatThrownBy(() -> doseLog(pet, course, LocalDate.of(2026, 10, 1), 480))
@@ -45,7 +45,7 @@ class MigrationTest extends PostgresTest {
     @Test
     void severalDosesWithoutAPlannedTimeAreAllowed() {
         UUID[] pet = ownerAndPet();
-        UUID course = course(pet[1], "AS_NEEDED", null, 3);
+        UUID course = course(pet[1], "DAILY", null);
 
         doseLog(pet, course, null, null);
         doseLog(pet, course, null, null);
@@ -58,7 +58,7 @@ class MigrationTest extends PostgresTest {
     void aLogCannotPointAtAnotherPetsCourse() {
         UUID[] pet = ownerAndPet();
         UUID[] otherPet = ownerAndPet();
-        UUID othersCourse = course(otherPet[1], "DAILY", null, null);
+        UUID othersCourse = course(otherPet[1], "DAILY", null);
 
         assertThatThrownBy(() -> doseLog(pet, othersCourse, null, null))
                 .isInstanceOf(DataIntegrityViolationException.class);
@@ -67,7 +67,7 @@ class MigrationTest extends PostgresTest {
     @Test
     void deletingACourseKeepsItsLogsAsPlainMedicineLogs() {
         UUID[] pet = ownerAndPet();
-        UUID course = course(pet[1], "DAILY", null, null);
+        UUID course = course(pet[1], "DAILY", null);
         doseLog(pet, course, LocalDate.of(2026, 10, 1), 480);
 
         this.jdbc.update("delete from medication_course where id = ?", course);
@@ -82,15 +82,7 @@ class MigrationTest extends PostgresTest {
     void everyNDaysNeedsTheNumberOfDays() {
         UUID[] pet = ownerAndPet();
 
-        assertThatThrownBy(() -> course(pet[1], "EVERY_N_DAYS", null, null))
-                .isInstanceOf(DataIntegrityViolationException.class);
-    }
-
-    @Test
-    void maxPerDayBelongsToAsNeededOnly() {
-        UUID[] pet = ownerAndPet();
-
-        assertThatThrownBy(() -> course(pet[1], "DAILY", null, 2))
+        assertThatThrownBy(() -> course(pet[1], "EVERY_N_DAYS", null))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
@@ -100,13 +92,13 @@ class MigrationTest extends PostgresTest {
         return new UUID[]{owner, seed.pet(owner)};
     }
 
-    private UUID course(UUID petId, String schedule, Integer everyDays, Integer maxPerDay) {
+    private UUID course(UUID petId, String schedule, Integer everyDays) {
         UUID id = UUID.randomUUID();
         this.jdbc.update("""
                 insert into medication_course (id, pet_id, client_id, name, amount_hundredths, unit, schedule, every_days,
-                    with_food, starts_on, start_minute, max_per_day, created_at, updated_at)
-                values (?, ?, ?, 'Amoxicillin', 100, 'TABLET', ?, ?, 'ANY', ?, 480, ?, now(), now())
-                """, id, petId, UUID.randomUUID(), schedule, everyDays, LocalDate.of(2026, 10, 1), maxPerDay);
+                    with_food, starts_on, start_minute, created_at, updated_at)
+                values (?, ?, ?, 'Amoxicillin', 100, 'TABLET', ?, ?, 'ANY', ?, 480, now(), now())
+                """, id, petId, UUID.randomUUID(), schedule, everyDays, LocalDate.of(2026, 10, 1));
         return id;
     }
 

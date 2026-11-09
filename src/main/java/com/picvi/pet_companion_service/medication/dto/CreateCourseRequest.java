@@ -24,12 +24,11 @@ public record CreateCourseRequest(@NotNull UUID clientId,
                                   Integer startMinute,
                                   LocalDate endsOn,
                                   Integer endsMinute,
-                                  Integer maxPerDay,
                                   Boolean reminders) {
 
     public CourseInput toInput() {
         return new CourseInput(this.name, this.amountHundredths, this.unit, this.schedule, this.everyDays, this.times,
-                this.withFood, this.startsOn, this.startMinute, this.endsOn, this.endsMinute, this.maxPerDay);
+                this.withFood, this.startsOn, this.startMinute, this.endsOn, this.endsMinute);
     }
 
     public boolean remindersOn() {

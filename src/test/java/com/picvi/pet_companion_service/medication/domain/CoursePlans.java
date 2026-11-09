@@ -29,10 +29,6 @@ public final class CoursePlans {
         return new CoursePlan(DoseSchedule.EVERY_N_DAYS, days, times, startsOn, startMinute, endsOn, endsMinute, null, null);
     }
 
-    public static CoursePlan asNeeded(LocalDate startsOn) {
-        return new CoursePlan(DoseSchedule.AS_NEEDED, null, List.of(), startsOn, 0, null, null, null, null);
-    }
-
     public static CoursePlan stoppedAt(CoursePlan plan, LocalDate on, int minute) {
         return new CoursePlan(plan.schedule(), plan.everyDays(), plan.times(), plan.startsOn(), plan.startMinute(),
                 plan.endsOn(), plan.endsMinute(), on, minute);

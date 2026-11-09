@@ -126,7 +126,7 @@ class MedicationControllerTest {
 
     private static CourseDto dto() {
         return new CourseDto(COURSE, UUID.randomUUID(), "Amoxicillin", 100, DoseUnit.TABLET, DoseSchedule.DAILY, null, List.of(480),
-                WithFood.YES, LocalDate.of(2026, 10, 18), 480, null, null, null, null, null, true, CourseStatus.ACTIVE, null, null,
+                WithFood.YES, LocalDate.of(2026, 10, 18), 480, null, null, null, null, true, CourseStatus.ACTIVE, null, null,
                 0, null, List.of(), 0);
     }
 }

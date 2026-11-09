@@ -153,7 +153,7 @@ class MedicationFlowTest extends PostgresTest {
 
     private CourseDto startCourse() {
         CreateCourseRequest request = new CreateCourseRequest(UUID.randomUUID(), this.today, "Amoxicillin", 100, DoseUnit.TABLET,
-                DoseSchedule.DAILY, null, List.of(MORNING, EVENING), WithFood.YES, this.today, 0, this.today.plusDays(3), 0, null, true);
+                DoseSchedule.DAILY, null, List.of(MORNING, EVENING), WithFood.YES, this.today, 0, this.today.plusDays(3), 0, true);
         return this.medicationService.create(this.owner, this.pet, request).course();
     }
 

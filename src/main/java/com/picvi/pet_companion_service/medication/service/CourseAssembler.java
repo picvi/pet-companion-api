@@ -45,7 +45,7 @@ class CourseAssembler {
         CoursePlan plan = course.plan();
         return new CourseDto(course.getId(), course.getClientId(), course.getName(), course.getAmountHundredths(), course.getUnit(),
                 course.getSchedule(), course.getEveryDays(), course.getTimes().stream().sorted().toList(), course.getWithFood(),
-                course.getStartsOn(), course.getStartMinute(), course.getEndsOn(), course.getEndsMinute(), course.getMaxPerDay(),
+                course.getStartsOn(), course.getStartMinute(), course.getEndsOn(), course.getEndsMinute(),
                 course.getStoppedOn(), course.getStoppedMinute(), course.isReminders(),
                 this.statusRule.status(plan, date, 0),
                 this.calculator.dayNumber(plan, date).stream().boxed().findFirst().orElse(null),

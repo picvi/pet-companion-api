@@ -22,7 +22,6 @@
       "startMinute": 1080,
       "endsOn": "2026-10-25",
       "endsMinute": 1080,
-      "maxPerDay": null,
       "reminders": true
     }
   ],

@@ -80,10 +80,6 @@ public class MedicationCourse {
     private Integer endsMinute;
 
     @Getter
-    @Column(name = "max_per_day")
-    private Integer maxPerDay;
-
-    @Getter
     @Column(name = "stopped_on")
     private LocalDate stoppedOn;
 
@@ -131,7 +127,6 @@ public class MedicationCourse {
         this.startMinute = input.startMinute();
         this.endsOn = input.endsOn();
         this.endsMinute = input.endsMinute();
-        this.maxPerDay = input.maxPerDay();
         this.reminders = reminders;
         this.updatedAt = now;
     }

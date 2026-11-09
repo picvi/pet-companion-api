@@ -15,7 +15,6 @@ public class CourseInputBuilder {
     private Integer startMinute = at(18);
     private LocalDate endsOn;
     private Integer endsMinute = at(18);
-    private Integer maxPerDay;
 
     public CourseInputBuilder(LocalDate today) {
         this.startsOn = today;
@@ -63,13 +62,8 @@ public class CourseInputBuilder {
         return this;
     }
 
-    public CourseInputBuilder maxPerDay(Integer maxPerDay) {
-        this.maxPerDay = maxPerDay;
-        return this;
-    }
-
     public CourseInput build() {
         return new CourseInput(this.name, this.amountHundredths, DoseUnit.TABLET, this.schedule, this.everyDays, this.times,
-                WithFood.YES, this.startsOn, this.startMinute, this.endsOn, this.endsMinute, this.maxPerDay);
+                WithFood.YES, this.startsOn, this.startMinute, this.endsOn, this.endsMinute);
     }
 }

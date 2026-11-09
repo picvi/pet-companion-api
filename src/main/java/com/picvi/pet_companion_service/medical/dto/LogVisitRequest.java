@@ -64,13 +64,12 @@ public record LogVisitRequest(UUID clientId,
                              Integer startMinute,
                              LocalDate endsOn,
                              Integer endsMinute,
-                             Integer maxPerDay,
                              Boolean reminders) {
 
         public CreateCourseRequest toCreateRequest(LocalDate date) {
             return new CreateCourseRequest(this.clientId, date, this.name, this.amountHundredths, this.unit, this.schedule,
                     this.everyDays, this.times, this.withFood, this.startsOn, this.startMinute, this.endsOn, this.endsMinute,
-                    this.maxPerDay, this.reminders);
+                    this.reminders);
         }
     }
 

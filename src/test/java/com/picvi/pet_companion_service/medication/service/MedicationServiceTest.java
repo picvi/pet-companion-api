@@ -103,7 +103,7 @@ class MedicationServiceTest {
     @Test
     void anInvalidCourseIsNotSaved() {
         when(this.repository.findByPetIdAndClientId(PET, CLIENT)).thenReturn(Optional.empty());
-        CreateCourseRequest invalid = new CreateCourseRequest(CLIENT, TODAY, " ", 100, null, null, null, null, null, null, null, null, null, null, null);
+        CreateCourseRequest invalid = new CreateCourseRequest(CLIENT, TODAY, " ", 100, null, null, null, null, null, null, null, null, null, null);
 
         assertThatThrownBy(() -> this.service.create(OWNER, PET, invalid)).isInstanceOf(InvalidCourse.class);
 
@@ -257,11 +257,11 @@ class MedicationServiceTest {
 
     private static CreateCourseRequest createRequest() {
         return new CreateCourseRequest(CLIENT, TODAY, "Amoxicillin", 100, DoseUnit.TABLET, DoseSchedule.DAILY,
-                null, List.of(at(8), at(18)), WithFood.YES, TODAY, at(18), TODAY.plusDays(7), at(18), null, true);
+                null, List.of(at(8), at(18)), WithFood.YES, TODAY, at(18), TODAY.plusDays(7), at(18), true);
     }
 
     private static UpdateCourseRequest updateRequest(LocalDate startsOn, int startMinute) {
         return new UpdateCourseRequest(TODAY, "Amoxicillin", 100, DoseUnit.TABLET, DoseSchedule.DAILY,
-                null, List.of(at(8), at(18)), WithFood.YES, startsOn, startMinute, TODAY.plusDays(10), at(18), null, true);
+                null, List.of(at(8), at(18)), WithFood.YES, startsOn, startMinute, TODAY.plusDays(10), at(18), true);
     }
 }

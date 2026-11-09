@@ -6,11 +6,11 @@ import java.util.List;
 public record CourseInput(String name, Integer amountHundredths, DoseUnit unit, DoseSchedule schedule,
                           Integer everyDays, List<Integer> times, WithFood withFood,
                           LocalDate startsOn, Integer startMinute,
-                          LocalDate endsOn, Integer endsMinute, Integer maxPerDay) {
+                          LocalDate endsOn, Integer endsMinute) {
 
     public CourseInput startingAt(LocalDate startsOn, Integer startMinute) {
         return new CourseInput(this.name, this.amountHundredths, this.unit, this.schedule, this.everyDays, this.times,
-                this.withFood, startsOn, startMinute, this.endsOn, this.endsMinute, this.maxPerDay);
+                this.withFood, startsOn, startMinute, this.endsOn, this.endsMinute);
     }
 
     public CoursePlan plan() {

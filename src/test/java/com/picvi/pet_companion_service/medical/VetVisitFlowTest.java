@@ -164,7 +164,7 @@ class VetVisitFlowTest extends PostgresTest {
 
     private LogVisitRequest fullVisit(UUID clientId, LocalDate on) {
         HomeCourse course = new HomeCourse(UUID.randomUUID(), "Metronidazole", 50, null, null, null, List.of(480), null,
-                this.today, 480, this.today.plusDays(7), 480, null, true);
+                this.today, 480, this.today.plusDays(7), 480, true);
         return new LogVisitRequest(clientId, this.today, on, 600, "VetCare", "Upset tummy", false, List.of(CARE_CODE),
                 List.of(new ClinicMedicine("Convenia injection", "0.5 ml")), List.of(course), 4200,
                 List.of(new TestRequest(VisitTestKind.BLOOD, true)), null,

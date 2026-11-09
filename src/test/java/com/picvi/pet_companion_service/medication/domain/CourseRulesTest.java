@@ -23,13 +23,6 @@ class CourseRulesTest {
     }
 
     @Test
-    void anAsNeededCourseWithoutTimesIsValid() {
-        CourseInput input = builder().schedule(DoseSchedule.AS_NEEDED).times(List.of()).maxPerDay(2).build();
-
-        assertThatCode(() -> this.rules.validate(input, TODAY)).doesNotThrowAnyException();
-    }
-
-    @Test
     void aBlankNameIsRequired() {
         this.assertRejected(builder().name("  "), "name", InvalidCourse.REQUIRED);
     }
@@ -78,16 +71,6 @@ class CourseRulesTest {
     @Test
     void anIntervalOnADailyCourseIsRejected() {
         this.assertRejected(builder().everyDays(3), "everyDays", InvalidCourse.INVALID);
-    }
-
-    @Test
-    void asNeededCannotHaveTimes() {
-        this.assertRejected(builder().schedule(DoseSchedule.AS_NEEDED), "times", InvalidCourse.INVALID);
-    }
-
-    @Test
-    void aDailyLimitBelongsToAsNeededOnly() {
-        this.assertRejected(builder().maxPerDay(2), "maxPerDay", InvalidCourse.INVALID);
     }
 
     @Test

@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.picvi.pet_companion_service.medication.domain.CoursePlans.asNeeded;
 import static com.picvi.pet_companion_service.medication.domain.CoursePlans.at;
 import static com.picvi.pet_companion_service.medication.domain.CoursePlans.daily;
 import static com.picvi.pet_companion_service.medication.domain.CoursePlans.everyDays;
@@ -74,15 +73,6 @@ class DoseTimesCalculatorTest {
         assertThat(doses).hasSize(5);
         assertThat(doses.get(4)).isEqualTo(new PlannedDose(oct(20), at(8)));
         assertThat(this.calculator.last(plan)).contains(new PlannedDose(oct(20), at(8)));
-    }
-
-    @Test
-    void asNeededHasNoPlannedDoses() {
-        CoursePlan plan = asNeeded(oct(18));
-
-        assertThat(this.calculator.between(plan, oct(18), oct(30))).isEmpty();
-        assertThat(this.calculator.isPlanned(plan, oct(18), at(8))).isFalse();
-        assertThat(this.calculator.last(plan)).isEmpty();
     }
 
     @Test

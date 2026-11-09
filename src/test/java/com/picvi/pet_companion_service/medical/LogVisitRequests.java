@@ -106,6 +106,6 @@ public final class LogVisitRequests {
     }
 
     public static HomeCourse aCourse(String name) {
-        return new HomeCourse(UUID.randomUUID(), name, 50, null, null, null, List.of(480), null, TODAY, 480, TODAY.plusDays(7), 480, null, true);
+        return new HomeCourse(UUID.randomUUID(), name, 50, null, null, null, List.of(480), null, TODAY, 480, TODAY.plusDays(7), 480, true);
     }
 }

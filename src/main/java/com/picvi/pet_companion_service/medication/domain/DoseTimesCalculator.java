@@ -12,9 +12,6 @@ public class DoseTimesCalculator {
     private static final int LAST_DOSE_SEARCH_DAYS = 28;
 
     public List<PlannedDose> between(CoursePlan plan, LocalDate from, LocalDate to) {
-        if (plan.schedule() == DoseSchedule.AS_NEEDED) {
-            return List.of();
-        }
         List<PlannedDose> doses = new ArrayList<>();
         LocalDate lastDay = this.lastDayToConsider(plan, to);
         for (LocalDate day = this.firstDoseDay(plan, from); !day.isAfter(lastDay); day = day.plusDays(plan.stepDays())) {
@@ -31,7 +28,7 @@ public class DoseTimesCalculator {
     }
 
     public boolean isPlanned(CoursePlan plan, LocalDate on, int minute) {
-        if (plan.schedule() == DoseSchedule.AS_NEEDED || !plan.times().contains(minute)) {
+        if (!plan.times().contains(minute)) {
             return false;
         }
         long daysSinceStart = ChronoUnit.DAYS.between(plan.startsOn(), on);

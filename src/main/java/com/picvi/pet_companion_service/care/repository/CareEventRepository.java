@@ -24,6 +24,9 @@ public interface CareEventRepository extends JpaRepository<CareEvent, UUID> {
     Optional<CareEvent> findByIdAndPetId(UUID id, UUID petId);
 
     @EntityGraph(attributePaths = "item")
+    Optional<CareEvent> findFirstByPetIdAndItemCodeAndPerformedOn(UUID petId, String itemCode, LocalDate performedOn);
+
+    @EntityGraph(attributePaths = "item")
     List<CareEvent> findAllByPetIdAndIdIn(UUID petId, Collection<UUID> ids);
 
     @Query("""

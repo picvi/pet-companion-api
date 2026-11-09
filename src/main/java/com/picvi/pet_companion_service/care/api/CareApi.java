@@ -36,8 +36,8 @@ public class CareApi {
         this.eventService.undo(ownerId, petId, eventId, date);
     }
 
-    public Optional<CareEventDto> findEvent(UUID petId, UUID eventId) {
-        return this.eventService.find(petId, eventId);
+    public Optional<CareEventDto> findEvent(UUID petId, String itemCode, LocalDate performedOn) {
+        return this.eventService.find(petId, itemCode, performedOn);
     }
 
     public List<CareEventDto> events(UUID petId, Collection<UUID> eventIds) {

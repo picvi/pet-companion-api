@@ -92,6 +92,23 @@ class CareEventServiceTest {
     }
 
     @Test
+    void findsTheEventOfACodeOnADay() {
+        CareEvent event = CareEntities.event(this.item, TODAY.minusDays(2));
+        when(this.eventRepository.findFirstByPetIdAndItemCodeAndPerformedOn(PET_ID, CODE, TODAY.minusDays(2))).thenReturn(Optional.of(event));
+
+        assertThat(this.service.find(PET_ID, CODE, TODAY.minusDays(2))).map(CareEventDto::performedOn).contains(TODAY.minusDays(2));
+    }
+
+    @Test
+    void readsManyEventsInOneQueryAndNoneWhenNoIdsAreAsked() {
+        UUID id = UUID.randomUUID();
+        when(this.eventRepository.findAllByPetIdAndIdIn(PET_ID, List.of(id))).thenReturn(List.of(CareEntities.event(this.item, TODAY)));
+
+        assertThat(this.service.findAll(PET_ID, List.of(id))).hasSize(1);
+        assertThat(this.service.findAll(PET_ID, List.of())).isEmpty();
+    }
+
+    @Test
     void allowsEventOnToday() {
         givenOwnedPetAndItem();
         when(this.eventRepository.save(any(CareEvent.class))).thenAnswer(invocation -> invocation.getArgument(0));

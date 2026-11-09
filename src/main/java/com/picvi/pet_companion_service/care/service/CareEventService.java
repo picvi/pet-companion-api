@@ -55,8 +55,8 @@ public class CareEventService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<CareEventDto> find(UUID petId, UUID eventId) {
-        return this.eventRepository.findByIdAndPetId(eventId, petId).map(CareEventDto::of);
+    public Optional<CareEventDto> find(UUID petId, String itemCode, LocalDate performedOn) {
+        return this.eventRepository.findFirstByPetIdAndItemCodeAndPerformedOn(petId, itemCode, performedOn).map(CareEventDto::of);
     }
 
     @Transactional(readOnly = true)

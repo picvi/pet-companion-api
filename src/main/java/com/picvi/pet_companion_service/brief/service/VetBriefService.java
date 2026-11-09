@@ -30,6 +30,7 @@ import com.picvi.pet_companion_service.common.ClientDateValidator;
 import com.picvi.pet_companion_service.condition.api.ConditionApi;
 import com.picvi.pet_companion_service.exception.brief.InvalidBriefRequest;
 import com.picvi.pet_companion_service.medical.api.MedicalApi;
+import com.picvi.pet_companion_service.medication.api.MedicationApi;
 import com.picvi.pet_companion_service.nutrition.api.NutritionApi;
 import com.picvi.pet_companion_service.nutrition.dto.DietHistoryResponse;
 import com.picvi.pet_companion_service.pet.dto.PetResponse;
@@ -71,6 +72,7 @@ public class VetBriefService {
     private final CareApi careApi;
     private final NutritionApi nutritionApi;
     private final MedicalApi medicalApi;
+    private final MedicationApi medicationApi;
     private final ConcernCounter concernCounter;
     private final TrendCalculator trendCalculator;
     private final QuestionSuggester questionSuggester;
@@ -109,7 +111,8 @@ public class VetBriefService {
         return new VetBriefResponse(Instant.now(this.clock), reason, period, this.petDto(petId, pet, date), mainWorry,
                 this.conditionApi.openConditions(petId, date),
                 new FoodDto((int) logs.stream().filter(log -> log.type() == LogType.MEAL).count(), diet),
-                days(logs), new CareDto(vaccines, parasites), this.medicalApi.lastVisit(petId, date).orElse(null),
+                days(logs), new CareDto(vaccines, parasites), this.medicationApi.coursesBetween(petId, period.from(), period.to(), date),
+                this.medicalApi.lastVisit(petId, date).orElse(null),
                 this.questions(concern, diet, vaccines, date));
     }
 

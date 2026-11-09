@@ -25,4 +25,14 @@ public interface MedicationCourseRepository extends JpaRepository<MedicationCour
               and (c.stoppedOn is null or c.stoppedOn >= :since)
             """)
     List<MedicationCourse> findNotEndedBefore(UUID petId, LocalDate since);
+
+    @Query("""
+            select c from MedicationCourse c
+            where c.petId = :petId
+              and c.startsOn <= :to
+              and (c.endsOn is null or c.endsOn >= :from)
+              and (c.stoppedOn is null or c.stoppedOn >= :from)
+            order by c.startsOn, c.name
+            """)
+    List<MedicationCourse> findOverlapping(UUID petId, LocalDate from, LocalDate to);
 }

@@ -8,6 +8,7 @@ import com.picvi.pet_companion_service.brief.dto.BriefOptionsResponse.PeriodDto;
 import com.picvi.pet_companion_service.care.dto.CareItemDto;
 import com.picvi.pet_companion_service.condition.api.ConditionApi.ConditionSnapshot;
 import com.picvi.pet_companion_service.medical.api.MedicalApi.VisitSnapshot;
+import com.picvi.pet_companion_service.medication.api.MedicationApi.CourseInPeriod;
 import com.picvi.pet_companion_service.nutrition.dto.DietHistoryResponse;
 import com.picvi.pet_companion_service.pet.entity.Sex;
 import com.picvi.pet_companion_service.petlog.domain.LogDetail;
@@ -29,6 +30,7 @@ public record VetBriefResponse(Instant generatedAt,
                                FoodDto food,
                                List<DayDto> days,
                                CareDto care,
+                               List<CourseInPeriod> medicines,
                                VisitSnapshot lastVisit,
                                List<QuestionDto> suggestedQuestions) {
 

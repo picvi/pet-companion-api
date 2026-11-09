@@ -138,21 +138,38 @@ public class VetVisit {
 
     public VetVisit() {}
 
-    public VetVisit(UUID petId, UUID clientId, LocalDate visitedOn, Set<VisitOutcome> outcomes, String clinic,
-                    String note, BriefHelpful briefHelpful, Instant now) {
-        this.petId = petId;
-        this.clientId = clientId;
-        this.createdAt = now;
-        this.replace(visitedOn, outcomes, clinic, note, briefHelpful, now);
+    public static VetVisit planned(UUID petId, UUID clientId, LocalDate scheduledOn, int scheduledMinute, String clinic,
+                                   String prepNote, Instant now) {
+        VetVisit visit = new VetVisit();
+        visit.petId = petId;
+        visit.clientId = clientId;
+        visit.status = VisitStatus.PLANNED;
+        visit.createdAt = now;
+        visit.replan(scheduledOn, scheduledMinute, clinic, prepNote, now);
+        return visit;
     }
 
-    public void replace(LocalDate visitedOn, Set<VisitOutcome> outcomes, String clinic, String note,
-                        BriefHelpful briefHelpful, Instant now) {
-        this.visitedOn = visitedOn;
-        this.outcomes = outcomes.isEmpty() ? EnumSet.noneOf(VisitOutcome.class) : EnumSet.copyOf(outcomes);
+    public static VetVisit done(UUID petId, UUID clientId, LocalDate visitedOn, String clinic, Instant now) {
+        VetVisit visit = new VetVisit();
+        visit.petId = petId;
+        visit.clientId = clientId;
+        visit.status = VisitStatus.DONE;
+        visit.visitedOn = visitedOn;
+        visit.clinic = clinic;
+        visit.createdAt = now;
+        visit.updatedAt = now;
+        return visit;
+    }
+
+    public void replan(LocalDate scheduledOn, int scheduledMinute, String clinic, String prepNote, Instant now) {
+        this.visitedOn = scheduledOn;
+        this.scheduledMinute = scheduledMinute;
         this.clinic = clinic;
-        this.note = note;
-        this.briefHelpful = briefHelpful;
+        this.prepNote = prepNote;
         this.updatedAt = now;
+    }
+
+    public boolean isPlanned() {
+        return this.status == VisitStatus.PLANNED;
     }
 }

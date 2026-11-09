@@ -35,6 +35,7 @@ import com.picvi.pet_companion_service.exception.nutrition.SafetyFoodNotFound;
 import com.picvi.pet_companion_service.exception.dayevent.UseVetPlan;
 import com.picvi.pet_companion_service.exception.medical.InvalidVetVisit;
 import com.picvi.pet_companion_service.exception.medical.VetVisitNotFound;
+import com.picvi.pet_companion_service.exception.medical.VisitStatusConflict;
 import com.picvi.pet_companion_service.exception.medication.CourseHasDoses;
 import com.picvi.pet_companion_service.exception.medication.CourseNotFound;
 import com.picvi.pet_companion_service.exception.medication.InvalidCourse;
@@ -356,6 +357,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(VetVisitNotFound.class)
     public ResponseEntity<ErrorResponse> handleVetVisitNotFound(VetVisitNotFound ex) {
         return error(HttpStatus.NOT_FOUND, ex);
+    }
+
+    @ExceptionHandler(VisitStatusConflict.class)
+    public ResponseEntity<ErrorResponse> handleVisitStatusConflict(VisitStatusConflict ex) {
+        return error(HttpStatus.CONFLICT, ex);
     }
 
     @ExceptionHandler(InvalidVetVisit.class)

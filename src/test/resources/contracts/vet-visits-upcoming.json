@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-23",
+  "plans": [
+    {
+      "id": "0199b0a1-4444-7000-8000-000000000002",
+      "clientId": "0199b0a1-5555-7000-8000-000000000002",
+      "status": "PLANNED",
+      "visitedOn": "2026-10-29",
+      "scheduledMinute": 600,
+      "clinic": "VetCare Mokotow",
+      "note": null,
+      "prepNote": "Bring the vaccine booklet",
+      "justCheck": false,
+      "outcomes": [],
+      "careEvents": [],
+      "clinicMedicines": [],
+      "weightGrams": null,
+      "courses": [],
+      "tests": [],
+      "procedure": null,
+      "followUpOf": "0199b0a1-4444-7000-8000-000000000001",
+      "followUpPlanId": null,
+      "appointment": { "eventId": "0199a1e2-7d00-7a10-9e55-3f0c2d9a41c0", "on": "2026-10-29", "startMinute": 600 },
+      "version": 0
+    }
+  ],
+  "lastVisit": { "id": "0199b0a1-4444-7000-8000-000000000001", "visitedOn": "2026-10-22", "clinic": "VetCare Mokotow" },
+  "nextVetAppointment": {
+    "eventId": "0199a1e2-7d00-7a10-9e55-3f0c2d9a41c0",
+    "visitId": "0199b0a1-4444-7000-8000-000000000002",
+    "on": "2026-10-29",
+    "startMinute": 600,
+    "status": "UPCOMING"
+  }
+}

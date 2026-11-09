@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.picvi.pet_companion_service.medical.dto.VetVisitListResponse;
+import com.picvi.pet_companion_service.medical.dto.UpcomingVisitsResponse;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -17,8 +17,8 @@ class VetVisitsContractTest {
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     @Test
-    void visitListFixtureRoundTrips() throws IOException {
-        this.assertRoundTrip("vet-visits-list.json", VetVisitListResponse.class);
+    void upcomingFixtureRoundTrips() throws IOException {
+        this.assertRoundTrip("vet-visits-upcoming.json", UpcomingVisitsResponse.class);
     }
 
     private <T> void assertRoundTrip(String name, Class<T> type) throws IOException {

@@ -2,7 +2,6 @@ package com.picvi.pet_companion_service.nutrition.dto;
 
 import com.picvi.pet_companion_service.nutrition.domain.AddFoodMode;
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
-import com.picvi.pet_companion_service.nutrition.domain.FoodOrigin;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
@@ -17,7 +16,6 @@ public record AddPetFoodRequest(UUID clientId,
                                 @NotNull FoodKind kind,
                                 Integer dailyGrams,
                                 Boolean forTraining,
-                                FoodOrigin origin,
                                 AddFoodMode mode,
                                 LocalDate startedOn,
                                 Boolean confirmAllergy,

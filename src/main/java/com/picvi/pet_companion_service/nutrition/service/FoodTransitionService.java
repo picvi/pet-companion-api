@@ -13,7 +13,6 @@ import com.picvi.pet_companion_service.nutrition.domain.AllergyMatch;
 import com.picvi.pet_companion_service.nutrition.domain.AllergyMatcher;
 import com.picvi.pet_companion_service.nutrition.domain.CancelKeep;
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
-import com.picvi.pet_companion_service.nutrition.domain.FoodOrigin;
 import com.picvi.pet_companion_service.nutrition.domain.MealPortionCalculator;
 import com.picvi.pet_companion_service.nutrition.domain.PetFoodStatus;
 import com.picvi.pet_companion_service.nutrition.domain.ProductStatus;
@@ -36,6 +35,7 @@ import com.picvi.pet_companion_service.nutrition.entity.PetFood;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductIngredientRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodTransitionRepository;
+import com.picvi.pet_companion_service.nutrition.repository.PetDietLock;
 import com.picvi.pet_companion_service.nutrition.repository.PetFoodRepository;
 import com.picvi.pet_companion_service.pet.dto.PetProfile;
 import com.picvi.pet_companion_service.pet.service.PetService;
@@ -63,6 +63,7 @@ public class FoodTransitionService {
 
     private final ClientDateValidator clientDateValidator;
     private final PetService petService;
+    private final PetDietLock dietLock;
     private final RhythmApi rhythmApi;
     private final DietService dietService;
     private final FoodChangeReader changeReader;
@@ -101,6 +102,7 @@ public class FoodTransitionService {
     public DietResponse start(UUID ownerId, UUID petId, StartFoodChangeRequest request) {
         this.clientDateValidator.validate(request.date());
         PetProfile profile = this.petService.getOwnedPetProfile(ownerId, petId);
+        this.dietLock.acquire(petId);
         LocalDate date = request.date();
         if (request.clientId() != null && this.transitionRepository.findByPetIdAndClientId(petId, request.clientId()).isPresent()) {
             return this.dietService.dietFor(profile, date);
@@ -122,7 +124,7 @@ public class FoodTransitionService {
         UUID clientId = request.clientId() == null ? UUID.randomUUID() : request.clientId();
 
         PetFood to = this.foodRepository.save(new PetFood(petId, UUID.randomUUID(), product, FoodKind.MAIN, dailyGrams, false,
-                request.origin() == null ? FoodOrigin.OWNER : request.origin(), startOn, ownerId, this.clock.instant()));
+                startOn, ownerId, this.clock.instant()));
         if (request.pace() == TransitionPace.IMMEDIATE) {
             this.changeRecorder.recordReplacement(petId, clientId, from, to, startOn);
         } else {
@@ -137,6 +139,7 @@ public class FoodTransitionService {
     public DietResponse act(UUID ownerId, UUID petId, UUID transitionId, FoodChangeActionRequest request) {
         this.clientDateValidator.validate(request.date());
         PetProfile profile = this.petService.getOwnedPetProfile(ownerId, petId);
+        this.dietLock.acquire(petId);
         LocalDate date = request.date();
         this.changeReader.closeIfFinished(petId, date, this.rhythmApi.mealsPerDay(petId, date));
         FoodTransition transition = this.transitionRepository.findByIdAndPetId(transitionId, petId).orElseThrow(FoodChangeNotFound::new);

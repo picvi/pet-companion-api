@@ -61,6 +61,7 @@ public class TummyReactionService {
 
     @Transactional
     public void apply(UUID petId, LocalDate date) {
+        this.transitionRepository.lockOpen(petId);
         Optional<FoodTransition> open = this.transitionRepository.findOpen(petId, List.of(TransitionStatus.ACTIVE, TransitionStatus.PAUSED))
                 .filter(transition -> transition.getStatus() == TransitionStatus.ACTIVE);
         if (open.isEmpty()) {

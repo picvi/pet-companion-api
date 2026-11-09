@@ -11,7 +11,6 @@ import com.picvi.pet_companion_service.nutrition.domain.CancelKeep;
 import com.picvi.pet_companion_service.nutrition.domain.Completeness;
 import com.picvi.pet_companion_service.nutrition.domain.FoodForm;
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
-import com.picvi.pet_companion_service.nutrition.domain.FoodOrigin;
 import com.picvi.pet_companion_service.nutrition.domain.LifeStage;
 import com.picvi.pet_companion_service.nutrition.domain.PetFoodStatus;
 import com.picvi.pet_companion_service.nutrition.domain.ProductStatus;
@@ -29,6 +28,7 @@ import com.picvi.pet_companion_service.nutrition.entity.PetFood;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductIngredientRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodTransitionRepository;
+import com.picvi.pet_companion_service.nutrition.repository.PetDietLock;
 import com.picvi.pet_companion_service.nutrition.repository.PetFoodRepository;
 import com.picvi.pet_companion_service.pet.dto.PetProfile;
 import com.picvi.pet_companion_service.pet.entity.VaccinationStatus;
@@ -70,6 +70,8 @@ class FoodTransitionServiceTest {
     @Mock
     private PetService petService;
     @Mock
+    private PetDietLock dietLock;
+    @Mock
     private RhythmApi rhythmApi;
     @Mock
     private DietService dietService;
@@ -100,7 +102,7 @@ class FoodTransitionServiceTest {
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-10-15T10:00:00Z"), ZoneId.of("Europe/Warsaw"));
-        this.service = new FoodTransitionService(this.clientDateValidator, this.petService, this.rhythmApi, this.dietService,
+        this.service = new FoodTransitionService(this.clientDateValidator, this.petService, this.dietLock, this.rhythmApi, this.dietService,
                 this.changeReader, this.changeRecorder, this.actions, this.tummyReactions, new TransitionPlanCalculator(),
                 this.transitionRepository, this.foodRepository, this.productRepository,
                 this.ingredientRepository, this.conditionApi, new AllergyMatcher(), clock);
@@ -125,7 +127,7 @@ class FoodTransitionServiceTest {
     }
 
     private PetFood food(int grams) {
-        PetFood food = new PetFood(PET, UUID.randomUUID(), this.product, FoodKind.MAIN, grams, false, FoodOrigin.OWNER,
+        PetFood food = new PetFood(PET, UUID.randomUUID(), this.product, FoodKind.MAIN, grams, false,
                 TODAY.minusDays(5), OWNER, Instant.now());
         ReflectionTestUtils.setField(food, "id", UUID.randomUUID());
         return food;
@@ -144,7 +146,7 @@ class FoodTransitionServiceTest {
     }
 
     private StartFoodChangeRequest start(TransitionPace pace) {
-        return new StartFoodChangeRequest(UUID.randomUUID(), this.product.getId(), null, pace, null, null, null, null, TODAY);
+        return new StartFoodChangeRequest(UUID.randomUUID(), this.product.getId(), null, pace, null, null, null, TODAY);
     }
 
     @Test
@@ -202,7 +204,7 @@ class FoodTransitionServiceTest {
         this.givenMainFoods(this.oldFood);
 
         assertThatThrownBy(() -> this.service.start(OWNER, PET, new StartFoodChangeRequest(null, this.product.getId(), null,
-                TransitionPace.STANDARD, TODAY.plusDays(8), null, null, null, TODAY))).isInstanceOf(InvalidFoodChange.class);
+                TransitionPace.STANDARD, TODAY.plusDays(8), null, null, TODAY))).isInstanceOf(InvalidFoodChange.class);
     }
 
     @Test
@@ -212,7 +214,7 @@ class FoodTransitionServiceTest {
         when(this.transitionRepository.findByPetIdAndClientId(PET, clientId)).thenReturn(Optional.of(running));
 
         this.service.start(OWNER, PET, new StartFoodChangeRequest(clientId, this.product.getId(), null, TransitionPace.STANDARD,
-                null, null, null, null, TODAY));
+                null, null, null, TODAY));
 
         verify(this.foodRepository, never()).save(any());
     }

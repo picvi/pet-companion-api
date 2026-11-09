@@ -38,4 +38,23 @@ class FoodProductSearchTest extends PostgresTest {
         assertThat(found).isNotEmpty().allSatisfy(p -> assertThat(p.getLifeStage().name()).isIn("PUPPY", "ALL"));
         assertThat(found).extracting(p -> p.getLifeStage().name()).contains("PUPPY");
     }
+
+    @Test
+    void seniorFilterKeepsSeniorAndAllStagesProducts() {
+        UUID user = new DatabaseSeed(this.jdbc).user();
+
+        List<FoodProduct> found = this.repository.search(user, "MAIN", null, "SENIOR", "", "", 800, 0);
+
+        assertThat(found).allSatisfy(p -> assertThat(p.getLifeStage().name()).isIn("SENIOR", "ALL"));
+        assertThat(found).extracting(p -> p.getLifeStage().name()).contains("SENIOR");
+    }
+
+    @Test
+    void adultFilterDoesNotReturnSeniorProducts() {
+        UUID user = new DatabaseSeed(this.jdbc).user();
+
+        List<FoodProduct> found = this.repository.search(user, "MAIN", null, "ADULT", "", "", 800, 0);
+
+        assertThat(found).allSatisfy(p -> assertThat(p.getLifeStage().name()).isIn("ADULT", "ALL"));
+    }
 }

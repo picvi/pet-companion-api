@@ -57,7 +57,7 @@ class PetLogApiViewTest extends PostgresTest {
 
         this.save(pet, user, LogType.TOILET, LogDetail.POO, 400, new LogValues(false, 6, Set.of(LogFlag.BLOOD, LogFlag.MUCUS), null, null, null, null, null, null, "loose"));
         this.save(pet, user, LogType.TOILET, LogDetail.PEE, 410, new LogValues(true, null, null, null, null, null, null, null, null, null));
-        this.save(pet, user, LogType.MEAL, LogDetail.LEFT_SOME, 480, new LogValues(null, null, Set.of(LogFlag.NEW_FOOD), 40, null, null, null, "Puppy mix", null, null, List.of(new LogFood(food, 40))));
+        this.save(pet, user, LogType.MEAL, LogDetail.LEFT_SOME, 480, new LogValues(null, null, Set.of(LogFlag.NEW_FOOD), null, null, null, null, "Puppy mix", null, null, List.of(new LogFood(food))));
         this.save(pet, user, LogType.SLEEP, null, 500, new LogValues(null, null, null, null, null, null, null, null, null, "nap"));
         this.save(pet, user, LogType.WAKE, null, 520, LogValues.none());
         this.save(pet, user, LogType.WALK, null, 540, new LogValues(null, null, null, null, null, 40, null, null, null, null));

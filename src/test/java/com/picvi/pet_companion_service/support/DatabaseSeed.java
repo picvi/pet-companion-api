@@ -95,7 +95,7 @@ public class DatabaseSeed {
         UUID product = this.foodProduct(userId);
         this.jdbc.update("insert into food_product_change (product_id, changed_by, changed_at, reason) values (?, ?, ?, 'CORRECTION')", product, userId, NOW);
         UUID oldFood = this.petFood(petId, product, userId);
-        UUID newFood = this.petFood(petId, product, userId);
+        UUID newFood = this.petFood(petId, this.foodProduct(userId), userId);
         this.jdbc.update("insert into pet_log_food (log_id, pet_food_id) values (?, ?)", logId, oldFood);
 
         UUID transition = UUID.randomUUID();

@@ -7,6 +7,8 @@ import com.picvi.pet_companion_service.exception.nutrition.AllergyMatchRequired;
 import com.picvi.pet_companion_service.exception.nutrition.FoodChangeAlreadyActive;
 import com.picvi.pet_companion_service.exception.nutrition.FoodProductNotFound;
 import com.picvi.pet_companion_service.exception.nutrition.InvalidFoodChange;
+import com.picvi.pet_companion_service.exception.nutrition.MainFoodLimit;
+import com.picvi.pet_companion_service.exception.nutrition.InvalidPetFood;
 import com.picvi.pet_companion_service.exception.nutrition.PetFoodNotFound;
 import com.picvi.pet_companion_service.exception.nutrition.SecondMainFood;
 import com.picvi.pet_companion_service.exception.nutrition.VersionConflict;
@@ -25,7 +27,6 @@ import com.picvi.pet_companion_service.nutrition.domain.TransitionPace;
 import com.picvi.pet_companion_service.nutrition.domain.Completeness;
 import com.picvi.pet_companion_service.nutrition.domain.FoodForm;
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
-import com.picvi.pet_companion_service.nutrition.domain.FoodOrigin;
 import com.picvi.pet_companion_service.nutrition.domain.LifeStage;
 import com.picvi.pet_companion_service.nutrition.domain.PetFoodRules;
 import com.picvi.pet_companion_service.nutrition.domain.PetFoodStatus;
@@ -43,10 +44,12 @@ import com.picvi.pet_companion_service.nutrition.repository.ExposureReader;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductIngredientRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodTransitionRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductRepository;
+import com.picvi.pet_companion_service.nutrition.repository.PetDietLock;
 import com.picvi.pet_companion_service.nutrition.repository.PetFoodRepository;
 import com.picvi.pet_companion_service.pet.dto.PetProfile;
 import com.picvi.pet_companion_service.pet.entity.VaccinationStatus;
 import com.picvi.pet_companion_service.pet.service.PetService;
+import com.picvi.pet_companion_service.rhythm.api.MealsRange;
 import com.picvi.pet_companion_service.rhythm.api.RhythmApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,6 +88,8 @@ class DietServiceTest {
     @Mock
     private PetService petService;
     @Mock
+    private PetDietLock dietLock;
+    @Mock
     private RhythmApi rhythmApi;
     @Mock
     private NutritionApi nutritionApi;
@@ -115,7 +120,7 @@ class DietServiceTest {
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-10-15T10:00:00Z"), ZoneId.of("Europe/Warsaw"));
-        this.service = new DietService(this.clientDateValidator, this.petService, this.rhythmApi, this.nutritionApi,
+        this.service = new DietService(this.clientDateValidator, this.petService, this.dietLock, this.rhythmApi, this.nutritionApi,
                 this.foodRepository, this.productRepository, this.ingredientRepository, this.notices, new PetFoodRules(),
                 this.conditionApi, new AllergyMatcher(), this.exposureReader, new ProteinExposureCalculator(), this.changeReader,
                 this.changeRecorder, this.transitionRepository, this.tummyReactions, clock);
@@ -132,20 +137,29 @@ class DietServiceTest {
     }
 
     private PetFood food(FoodKind kind, int grams) {
-        PetFood food = new PetFood(PET, UUID.randomUUID(), this.product, kind, grams, false, FoodOrigin.BREEDER, TODAY.minusDays(2),
+        PetFood food = new PetFood(PET, UUID.randomUUID(), this.product, kind, grams, false, TODAY.minusDays(2),
                 OWNER, Instant.now());
         ReflectionTestUtils.setField(food, "id", UUID.randomUUID());
         return food;
     }
 
     private AddPetFoodRequest add(FoodKind kind, AddFoodMode mode) {
-        return new AddPetFoodRequest(UUID.randomUUID(), this.product.getId(), kind, 100, null, null, mode, null, null, TODAY);
+        return new AddPetFoodRequest(UUID.randomUUID(), this.product.getId(), kind, 100, null, mode, null, null, TODAY);
     }
 
     private void givenVisibleProduct() {
         when(this.productRepository.findByIdAndStatus(this.product.getId(), ProductStatus.PUBLIC)).thenReturn(Optional.empty());
         when(this.productRepository.findByIdAndStatusAndCreatedBy(this.product.getId(), ProductStatus.OWNER_ADDED, OWNER))
                 .thenReturn(Optional.of(this.product));
+    }
+
+    private PetFood mainOfAnotherProduct(int grams) {
+        FoodProduct other = FoodProduct.ownerAdded(OWNER, "Acana", "Adult", null, FoodForm.DRY, FoodKind.MAIN, LifeStage.ADULT,
+                Completeness.YES, ProteinStatus.KNOWN, "acana adult", Instant.now());
+        ReflectionTestUtils.setField(other, "id", UUID.randomUUID());
+        PetFood food = new PetFood(PET, UUID.randomUUID(), other, FoodKind.MAIN, grams, false, TODAY.minusDays(2), OWNER, Instant.now());
+        ReflectionTestUtils.setField(food, "id", UUID.randomUUID());
+        return food;
     }
 
     private void givenGiven(PetFood... foods) {
@@ -200,7 +214,7 @@ class DietServiceTest {
     @Test
     void aSecondMainFoodNeedsAnAnswer() {
         this.givenVisibleProduct();
-        this.givenGiven(this.food(FoodKind.MAIN, 100));
+        this.givenGiven(this.mainOfAnotherProduct(100));
 
         assertThatThrownBy(() -> this.service.addFood(OWNER, PET, this.add(FoodKind.MAIN, null))).isInstanceOf(SecondMainFood.class);
         verify(this.foodRepository, never()).save(any());
@@ -209,7 +223,7 @@ class DietServiceTest {
     @Test
     void feedBothKeepsTheFirstFood() {
         this.givenVisibleProduct();
-        PetFood existing = this.food(FoodKind.MAIN, 100);
+        PetFood existing = this.mainOfAnotherProduct(100);
         this.givenGiven(existing);
 
         this.service.addFood(OWNER, PET, this.add(FoodKind.MAIN, AddFoodMode.FEED_BOTH));
@@ -222,13 +236,13 @@ class DietServiceTest {
     @Test
     void replaceRecordsAnAllAtOnceSwitchStartingToday() {
         this.givenVisibleProduct();
-        PetFood existing = this.food(FoodKind.MAIN, 100);
+        PetFood existing = this.mainOfAnotherProduct(100);
         this.givenGiven(existing);
         when(this.foodRepository.save(any(PetFood.class))).thenAnswer(call -> call.getArgument(0));
         UUID clientId = UUID.randomUUID();
 
         this.service.addFood(OWNER, PET, new AddPetFoodRequest(clientId, this.product.getId(), FoodKind.MAIN, 100, null,
-                null, AddFoodMode.REPLACE, TODAY.minusDays(5), null, TODAY));
+                AddFoodMode.REPLACE, TODAY.minusDays(5), null, TODAY));
 
         ArgumentCaptor<PetFood> saved = ArgumentCaptor.forClass(PetFood.class);
         verify(this.foodRepository).save(saved.capture());
@@ -239,12 +253,74 @@ class DietServiceTest {
     @Test
     void feedingBothWhileAChangeRunsIsRefused() {
         this.givenVisibleProduct();
-        this.givenGiven(this.food(FoodKind.MAIN, 100));
+        this.givenGiven(this.mainOfAnotherProduct(100));
         when(this.transitionRepository.findOpen(eq(PET), any())).thenReturn(Optional.of(
                 FoodTransition.planned(PET, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), TransitionPace.STANDARD, TODAY, Instant.now())));
 
         assertThatThrownBy(() -> this.service.addFood(OWNER, PET, this.add(FoodKind.MAIN, AddFoodMode.FEED_BOTH)))
                 .isInstanceOf(FoodChangeAlreadyActive.class);
+    }
+
+    @Test
+    void getDietCarriesHowManyMealsHerAgeAllows() {
+        this.givenGiven();
+        when(this.rhythmApi.mealsRange(PET, TODAY)).thenReturn(new MealsRange(4, 6));
+
+        assertThat(this.service.getDiet(OWNER, PET, TODAY).mealsRange()).isEqualTo(new MealsRange(4, 6));
+    }
+
+    @Test
+    void aThirdMainFoodIsRefused() {
+        this.givenVisibleProduct();
+        this.givenGiven(this.mainOfAnotherProduct(60), this.mainOfAnotherProduct(60));
+
+        assertThatThrownBy(() -> this.service.addFood(OWNER, PET, this.add(FoodKind.MAIN, AddFoodMode.FEED_BOTH)))
+                .isInstanceOf(MainFoodLimit.class);
+        assertThatThrownBy(() -> this.service.addFood(OWNER, PET, this.add(FoodKind.MAIN, null)))
+                .isInstanceOf(MainFoodLimit.class);
+        verify(this.foodRepository, never()).save(any());
+    }
+
+    @Test
+    void addingAFoodTakesThePetLockBeforeLookingAtHerFoods() {
+        this.givenVisibleProduct();
+        this.givenGiven(this.mainOfAnotherProduct(60), this.mainOfAnotherProduct(60));
+
+        assertThatThrownBy(() -> this.service.addFood(OWNER, PET, this.add(FoodKind.MAIN, AddFoodMode.FEED_BOTH)))
+                .isInstanceOf(MainFoodLimit.class);
+
+        org.mockito.InOrder order = org.mockito.Mockito.inOrder(this.dietLock, this.foodRepository);
+        order.verify(this.dietLock).acquire(PET);
+        order.verify(this.foodRepository).findGivenOn(eq(PET), eq(TODAY), eq(PetFoodStatus.ENTERED_IN_ERROR));
+    }
+
+    @Test
+    void theSameFoodCannotBeAMainFoodTwice() {
+        this.givenVisibleProduct();
+        this.givenGiven(this.food(FoodKind.MAIN, 100));
+
+        assertThatThrownBy(() -> this.service.addFood(OWNER, PET, this.add(FoodKind.MAIN, AddFoodMode.FEED_BOTH)))
+                .isInstanceOf(InvalidPetFood.class);
+    }
+
+    @Test
+    void aTreatIsAllowedWithTwoMainFoods() {
+        this.givenVisibleProduct();
+        this.givenGiven(this.mainOfAnotherProduct(60), this.mainOfAnotherProduct(60));
+        when(this.foodRepository.save(any(PetFood.class))).thenAnswer(call -> call.getArgument(0));
+
+        this.service.addFood(OWNER, PET, this.add(FoodKind.TREAT, null));
+
+        verify(this.foodRepository).save(any(PetFood.class));
+    }
+
+    @Test
+    void anotherMainFoodCanBeAddedOnlyBelowTwoAndOutsideAChange() {
+        this.givenGiven(this.food(FoodKind.MAIN, 100));
+        assertThat(this.service.getDiet(OWNER, PET, TODAY).canAddMainFood()).isTrue();
+
+        this.givenGiven(this.mainOfAnotherProduct(60), this.mainOfAnotherProduct(60));
+        assertThat(this.service.getDiet(OWNER, PET, TODAY).canAddMainFood()).isFalse();
     }
 
     @Test
@@ -274,7 +350,7 @@ class DietServiceTest {
         when(this.foodRepository.findByPetIdAndClientId(PET, clientId)).thenReturn(Optional.of(this.food(FoodKind.MAIN, 100)));
         this.givenGiven();
 
-        this.service.addFood(OWNER, PET, new AddPetFoodRequest(clientId, this.product.getId(), FoodKind.MAIN, 100, null, null, null, null, null, TODAY));
+        this.service.addFood(OWNER, PET, new AddPetFoodRequest(clientId, this.product.getId(), FoodKind.MAIN, 100, null, null, null, null, TODAY));
 
         verify(this.foodRepository, never()).save(any());
     }
@@ -292,7 +368,7 @@ class DietServiceTest {
         PetFood food = this.food(FoodKind.MAIN, 100);
         when(this.foodRepository.findByIdAndPetId(food.getId(), PET)).thenReturn(Optional.of(food));
 
-        assertThatThrownBy(() -> this.service.updateFood(OWNER, PET, food.getId(), 7, new UpdatePetFoodRequest(90, false, null, TODAY)))
+        assertThatThrownBy(() -> this.service.updateFood(OWNER, PET, food.getId(), 7, new UpdatePetFoodRequest(90, false, TODAY)))
                 .isInstanceOf(VersionConflict.class);
         verify(this.foodRepository, never()).saveAndFlush(any());
     }
@@ -303,10 +379,9 @@ class DietServiceTest {
         when(this.foodRepository.findByIdAndPetId(food.getId(), PET)).thenReturn(Optional.of(food));
         this.givenGiven(food);
 
-        this.service.updateFood(OWNER, PET, food.getId(), food.getVersion(), new UpdatePetFoodRequest(90, false, null, TODAY));
+        this.service.updateFood(OWNER, PET, food.getId(), food.getVersion(), new UpdatePetFoodRequest(90, false, TODAY));
 
         assertThat(food.getDailyGrams()).isEqualTo(90);
-        assertThat(food.getOrigin()).isEqualTo(FoodOrigin.BREEDER);
     }
 
     @Test
@@ -363,7 +438,7 @@ class DietServiceTest {
         when(this.ingredientRepository.findAllByProductIdIn(any())).thenReturn(List.of(
                 new FoodProductIngredient(this.product.getId(), "CHICKEN", IngredientRole.MAIN, false)));
 
-        this.service.addFood(OWNER, PET, new AddPetFoodRequest(UUID.randomUUID(), this.product.getId(), FoodKind.MAIN, 100, null, null,
+        this.service.addFood(OWNER, PET, new AddPetFoodRequest(UUID.randomUUID(), this.product.getId(), FoodKind.MAIN, 100, null,
                 null, null, true, TODAY));
 
         verify(this.foodRepository).save(any(PetFood.class));

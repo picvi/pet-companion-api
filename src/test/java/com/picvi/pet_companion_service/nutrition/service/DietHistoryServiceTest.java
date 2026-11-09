@@ -6,7 +6,6 @@ import com.picvi.pet_companion_service.nutrition.domain.Completeness;
 import com.picvi.pet_companion_service.nutrition.domain.ExposureRow;
 import com.picvi.pet_companion_service.nutrition.domain.FoodForm;
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
-import com.picvi.pet_companion_service.nutrition.domain.FoodOrigin;
 import com.picvi.pet_companion_service.nutrition.domain.IngredientCode;
 import com.picvi.pet_companion_service.nutrition.domain.LifeStage;
 import com.picvi.pet_companion_service.nutrition.domain.PetFoodStatus;
@@ -63,7 +62,7 @@ class DietHistoryServiceTest {
         FoodProduct product = FoodProduct.ownerAdded(UUID.randomUUID(), "Brand", name, null, FoodForm.DRY, kind, LifeStage.ALL,
                 Completeness.YES, ProteinStatus.KNOWN, name, Instant.now());
         ReflectionTestUtils.setField(product, "id", UUID.randomUUID());
-        PetFood food = new PetFood(PET, UUID.randomUUID(), product, kind, 100, false, FoodOrigin.OWNER, started, UUID.randomUUID(), Instant.now());
+        PetFood food = new PetFood(PET, UUID.randomUUID(), product, kind, 100, false, started, UUID.randomUUID(), Instant.now());
         ReflectionTestUtils.setField(food, "id", UUID.randomUUID());
         if (ended != null) {
             food.endOn(ended);

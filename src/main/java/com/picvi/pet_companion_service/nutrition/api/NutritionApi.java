@@ -75,10 +75,14 @@ public class NutritionApi {
                 .toList();
     }
 
-    /** True on the days of a food change (planned or paused), including past ones: meals logged then are "new food" meals. */
-    public boolean isFoodChangeOn(UUID petId, LocalDate date) {
+    /**
+     * A meal is a "new food" meal when a change covers the day and the meal has the incoming food. A meal that
+     * lists no food during a change counts too: the dog was eating the mix.
+     */
+    public boolean isNewFoodMeal(UUID petId, LocalDate date, List<UUID> mealFoodIds) {
         return this.transitionRepository.findAllByPetIdOrderByStartOnDesc(petId).stream()
-                .anyMatch(transition -> this.coversDay(transition, date));
+                .filter(transition -> this.coversDay(transition, date))
+                .anyMatch(transition -> mealFoodIds.isEmpty() || mealFoodIds.contains(transition.getToFoodId()));
     }
 
     /** Days since the latest food-change plan began on or before the given day. */
@@ -203,6 +207,10 @@ public class NutritionApi {
         if (measured) {
             portions.removeIf(portion -> portion.grams() == 0);
         }
+        this.mainFoodsOn(view.fromFood().getPetId(), date).stream()
+                .filter(food -> !food.getId().equals(view.fromFood().getId()) && !food.getId().equals(view.toFood().getId()))
+                .forEach(steady -> portions.add(new MealPortion(steady.getId(),
+                        MealPortionCalculator.perMealGrams(steady.getDailyGrams(), mealsPerDay))));
         PortionState state = view.transition().getStatus() == TransitionStatus.PAUSED ? PortionState.PAUSED
                 : measured ? PortionState.MIX : PortionState.MIX_PARTS;
         return Optional.of(new DayPortions(state, portions));

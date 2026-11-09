@@ -1,7 +1,6 @@
 package com.picvi.pet_companion_service.nutrition.entity;
 
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
-import com.picvi.pet_companion_service.nutrition.domain.FoodOrigin;
 import com.picvi.pet_companion_service.nutrition.domain.PetFoodStatus;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +14,7 @@ class PetFoodTest {
     private static final LocalDate MON = LocalDate.of(2026, 10, 19);
 
     private PetFood foodStartedOn(LocalDate date) {
-        return new PetFood(UUID.randomUUID(), UUID.randomUUID(), null, FoodKind.MAIN, 120, false, FoodOrigin.OWNER, date,
+        return new PetFood(UUID.randomUUID(), UUID.randomUUID(), null, FoodKind.MAIN, 120, false, date,
                 UUID.randomUUID(), Instant.now());
     }
 

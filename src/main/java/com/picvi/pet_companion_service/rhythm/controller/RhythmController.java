@@ -3,6 +3,7 @@ package com.picvi.pet_companion_service.rhythm.controller;
 import com.picvi.pet_companion_service.rhythm.domain.DaySettings;
 import com.picvi.pet_companion_service.rhythm.dto.NoticeRequest;
 import com.picvi.pet_companion_service.rhythm.dto.RhythmDayResponse;
+import com.picvi.pet_companion_service.rhythm.dto.UpdateMealsPerDayRequest;
 import com.picvi.pet_companion_service.rhythm.dto.UpdateRhythmSettingsRequest;
 import com.picvi.pet_companion_service.rhythm.service.RhythmService;
 import com.picvi.pet_companion_service.rhythm.service.RhythmSettingsService;
@@ -36,6 +37,13 @@ public class RhythmController {
         DaySettings settings = new DaySettings(request.wakeMinute(), request.bedMinute(), request.mealMinutes(),
                 request.customAwakeMinutes());
         return this.settingsService.update(userId, petId, settings, request.date());
+    }
+
+    @PutMapping("/meals-per-day")
+    public RhythmDayResponse updateMealsPerDay(@AuthenticationPrincipal UUID userId,
+                                               @PathVariable UUID petId,
+                                               @Valid @RequestBody UpdateMealsPerDayRequest request) {
+        return this.settingsService.updateMealsPerDay(userId, petId, request.mealsPerDay(), request.date());
     }
 
     @PostMapping("/band-note/seen")

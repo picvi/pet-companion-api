@@ -187,9 +187,10 @@ public class PetLogService {
         this.changeRepository.save(new PetLogChangeRow(log.getId(), petId, change, OffsetDateTime.now(this.clock)));
     }
 
-    /** A meal during a food change is a "new food" meal; the server sets the flag, the app does not send it. */
+    /** A meal with the incoming food of a running change is a "new food" meal; the server sets the flag, the app does not send it. */
     private LogValues withNewFoodFlag(UUID petId, LogType type, LocalDate localDate, LogValues values) {
-        if (type != LogType.MEAL || values.flags().contains(LogFlag.NEW_FOOD) || !this.nutritionApi.isFoodChangeOn(petId, localDate)) {
+        List<UUID> foodIds = values.foods().stream().map(LogFood::petFoodId).toList();
+        if (type != LogType.MEAL || values.flags().contains(LogFlag.NEW_FOOD) || !this.nutritionApi.isNewFoodMeal(petId, localDate, foodIds)) {
             return values;
         }
         return values.withFlag(LogFlag.NEW_FOOD);

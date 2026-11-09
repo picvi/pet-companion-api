@@ -60,7 +60,8 @@ class RhythmSettingsServiceTest {
     @BeforeEach
     void setUp() {
         this.service = new RhythmSettingsService(this.clientDateValidator, this.petService, this.ruleLoader,
-                new RhythmRuleResolver(), this.settingsValidator, this.settingsRepository, this.rhythmService);
+                new RhythmRuleResolver(), this.settingsValidator, new com.picvi.pet_companion_service.rhythm.domain.DefaultDayProposer(), this.settingsRepository,
+                this.rhythmService);
     }
 
     private void givenOwnedPetAndRules() {
@@ -101,6 +102,35 @@ class RhythmSettingsServiceTest {
         assertThat(existing.getWakeMinute()).isEqualTo(420);
         assertThat(existing.getMealMinutes()).hasSize(4);
         assertThat(existing.getCustomAwakeMinutes()).isNull();
+    }
+
+    @Test
+    void changingTheMealCountSpreadsTheMealsAndKeepsTheDay() {
+        this.givenOwnedPetAndRules();
+        PetRhythmSettings existing = new PetRhythmSettings(null, TODAY, 10);
+        existing.setWakeMinute(420);
+        existing.setBedMinute(1350);
+        existing.replaceMealMinutes(List.of(435, 720, 1110));
+        when(this.settingsRepository.findByPetId(PET_ID)).thenReturn(Optional.of(existing));
+
+        this.service.updateMealsPerDay(OWNER_ID, PET_ID, 5, TODAY);
+
+        verify(this.settingsRepository).save(existing);
+        assertThat(existing.getMealMinutes()).hasSize(5).isSorted();
+        assertThat(existing.getWakeMinute()).isEqualTo(420);
+        assertThat(existing.getBedMinute()).isEqualTo(1350);
+    }
+
+    @Test
+    void changingTheMealCountWithoutSavedSettingsStartsFromTheUsualDay() {
+        this.givenOwnedPetAndRules();
+        when(this.settingsRepository.findByPetId(PET_ID)).thenReturn(Optional.empty());
+
+        this.service.updateMealsPerDay(OWNER_ID, PET_ID, 4, TODAY);
+
+        ArgumentCaptor<PetRhythmSettings> saved = ArgumentCaptor.forClass(PetRhythmSettings.class);
+        verify(this.settingsRepository).save(saved.capture());
+        assertThat(saved.getValue().getMealMinutes()).containsExactly(435, 660, 885, 1110);
     }
 
     @Test

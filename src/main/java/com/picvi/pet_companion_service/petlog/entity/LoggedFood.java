@@ -12,13 +12,9 @@ public class LoggedFood {
     @Column(name = "pet_food_id", nullable = false)
     private UUID petFoodId;
 
-    @Getter
-    private Integer grams;
-
     public LoggedFood() {}
 
-    public LoggedFood(UUID petFoodId, Integer grams) {
+    public LoggedFood(UUID petFoodId) {
         this.petFoodId = petFoodId;
-        this.grams = grams;
     }
 }

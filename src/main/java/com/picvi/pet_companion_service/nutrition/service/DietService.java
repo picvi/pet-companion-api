@@ -7,6 +7,7 @@ import com.picvi.pet_companion_service.exception.nutrition.FoodChangeAlreadyActi
 import com.picvi.pet_companion_service.exception.nutrition.FoodProductNotFound;
 import com.picvi.pet_companion_service.exception.nutrition.InvalidFoodChange;
 import com.picvi.pet_companion_service.exception.nutrition.InvalidPetFood;
+import com.picvi.pet_companion_service.exception.nutrition.MainFoodLimit;
 import com.picvi.pet_companion_service.exception.nutrition.PetFoodNotFound;
 import com.picvi.pet_companion_service.exception.nutrition.SecondMainFood;
 import com.picvi.pet_companion_service.exception.nutrition.VersionConflict;
@@ -19,7 +20,6 @@ import com.picvi.pet_companion_service.nutrition.domain.ChangeView;
 import com.picvi.pet_companion_service.nutrition.domain.Completeness;
 import com.picvi.pet_companion_service.nutrition.domain.FoodForm;
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
-import com.picvi.pet_companion_service.nutrition.domain.FoodOrigin;
 import com.picvi.pet_companion_service.nutrition.domain.IngredientCode;
 import com.picvi.pet_companion_service.nutrition.domain.NoticeCode;
 import com.picvi.pet_companion_service.nutrition.domain.PetFoodRules;
@@ -46,6 +46,7 @@ import com.picvi.pet_companion_service.nutrition.repository.FoodProductIngredien
 import com.picvi.pet_companion_service.nutrition.repository.ExposureReader;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodTransitionRepository;
+import com.picvi.pet_companion_service.nutrition.repository.PetDietLock;
 import com.picvi.pet_companion_service.nutrition.repository.PetFoodRepository;
 import com.picvi.pet_companion_service.pet.dto.PetProfile;
 import com.picvi.pet_companion_service.pet.service.PetService;
@@ -70,9 +71,11 @@ import java.util.stream.Collectors;
 public class DietService {
     static final int KEEP_FOOD_TIP_DAYS = 14;
     static final int PROTEINS_WINDOW_DAYS = 56;
+    static final int MAX_MAIN_FOODS = 2;
 
     private final ClientDateValidator clientDateValidator;
     private final PetService petService;
+    private final PetDietLock dietLock;
     private final RhythmApi rhythmApi;
     private final NutritionApi nutritionApi;
     private final PetFoodRepository foodRepository;
@@ -98,6 +101,7 @@ public class DietService {
     public DietResponse addFood(UUID ownerId, UUID petId, AddPetFoodRequest request) {
         this.clientDateValidator.validate(request.date());
         PetProfile profile = this.petService.getOwnedPetProfile(ownerId, petId);
+        this.dietLock.acquire(petId);
         if (request.clientId() != null && this.foodRepository.findByPetIdAndClientId(petId, request.clientId()).isPresent()) {
             return this.dietFor(profile, request.date());
         }
@@ -116,9 +120,15 @@ public class DietService {
         List<PetFood> replaced = List.of();
         if (request.kind() == FoodKind.MAIN) {
             List<PetFood> mains = this.mainFoodsGivenOn(petId, date);
+            if (mains.stream().anyMatch(main -> main.getProduct().getId().equals(product.getId()))) {
+                throw new InvalidPetFood("This food is already one of her main foods");
+            }
             if (!mains.isEmpty()) {
                 if (this.transitionRepository.findOpen(petId, List.of(TransitionStatus.ACTIVE, TransitionStatus.PAUSED)).isPresent()) {
                     throw new FoodChangeAlreadyActive();
+                }
+                if (mains.size() >= MAX_MAIN_FOODS && request.mode() != AddFoodMode.REPLACE) {
+                    throw new MainFoodLimit();
                 }
                 if (request.mode() == null) {
                     throw new SecondMainFood();
@@ -132,7 +142,7 @@ public class DietService {
 
         UUID clientId = request.clientId() == null ? UUID.randomUUID() : request.clientId();
         PetFood saved = this.foodRepository.save(new PetFood(petId, clientId, product,
-                request.kind(), request.dailyGrams(), forTraining, request.origin() == null ? FoodOrigin.OWNER : request.origin(),
+                request.kind(), request.dailyGrams(), forTraining,
                 startedOn, ownerId, this.clock.instant()));
         if (!replaced.isEmpty()) {
             replaced.stream().skip(1).forEach(extra -> extra.endOn(date));
@@ -151,7 +161,7 @@ public class DietService {
         }
         boolean forTraining = Boolean.TRUE.equals(request.forTraining());
         this.rules.validate(food.getKind(), request.dailyGrams(), forTraining, null, request.date(), profile.birthDate());
-        food.update(request.dailyGrams(), forTraining, request.origin() == null ? food.getOrigin() : request.origin());
+        food.update(request.dailyGrams(), forTraining);
         this.foodRepository.saveAndFlush(food);
         return this.dietFor(profile, request.date());
     }
@@ -160,6 +170,7 @@ public class DietService {
     public DietResponse endFood(UUID ownerId, UUID petId, UUID foodId, LocalDate date) {
         this.clientDateValidator.validate(date);
         PetProfile profile = this.petService.getOwnedPetProfile(ownerId, petId);
+        this.dietLock.acquire(petId);
         PetFood food = this.ownedFood(petId, foodId);
         this.requireNotInRunningChange(petId, food);
         if (food.getStatus() == PetFoodStatus.ACTIVE) {
@@ -173,6 +184,7 @@ public class DietService {
     public DietResponse removeFood(UUID ownerId, UUID petId, UUID foodId, LocalDate date) {
         this.clientDateValidator.validate(date);
         PetProfile profile = this.petService.getOwnedPetProfile(ownerId, petId);
+        this.dietLock.acquire(petId);
         PetFood food = this.ownedFood(petId, foodId);
         this.requireNotInRunningChange(petId, food);
         food.markEnteredInError();
@@ -215,7 +227,8 @@ public class DietService {
         List<ProteinExposureDto> proteins = this.exposureCalculator.calculate(
                 this.exposureReader.read(petId, date.minusDays(PROTEINS_WINDOW_DAYS), date));
         FoodChangeDto change = this.changeReader.current(petId, date, mealsPerDay).map(view -> FoodChangeDto.of(view, date, this.reactionOf(view, date, mealsPerDay))).orElse(null);
-        return new DietResponse(date, mealsPerDay, dtos, plan.today(), plan.tomorrow(), change, proteins, unknownProtein,
+        boolean canAddMainFood = change == null && foods.stream().filter(food -> food.getKind() == FoodKind.MAIN).count() < MAX_MAIN_FOODS;
+        return new DietResponse(date, mealsPerDay, this.rhythmApi.mealsRange(petId, date), dtos, canAddMainFood, plan.today(), plan.tomorrow(), change, proteins, unknownProtein,
                 this.noticesFor(profile, date, foods, unknownProtein));
     }
 
@@ -224,8 +237,7 @@ public class DietService {
         boolean hasMain = foods.stream().anyMatch(food -> food.getKind() == FoodKind.MAIN);
         boolean foodAsk = !hasMain && this.notices.askState(profile.id()) == PortionState.ASK;
         boolean recentlyHome = ChronoUnit.DAYS.between(profile.createdOn(), date) < KEEP_FOOD_TIP_DAYS;
-        boolean keepFoodTip = recentlyHome && !seen.contains(NoticeCode.KEEP_FOOD_TIP) && foods.stream()
-                .anyMatch(food -> food.getKind() == FoodKind.MAIN && food.getOrigin() != FoodOrigin.OWNER);
+        boolean keepFoodTip = recentlyHome && hasMain && !seen.contains(NoticeCode.KEEP_FOOD_TIP);
         boolean proteinAsk = !unknownProtein.isEmpty() && !seen.contains(NoticeCode.PROTEIN_ASK);
         boolean rawNote = !seen.contains(NoticeCode.RAW_NOTE) && foods.stream().anyMatch(food ->
                 food.getProduct().getForm() == FoodForm.RAW || food.getProduct().getForm() == FoodForm.HOME_COOKED);

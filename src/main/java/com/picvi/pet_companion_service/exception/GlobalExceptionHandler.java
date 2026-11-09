@@ -21,6 +21,7 @@ import com.picvi.pet_companion_service.exception.rhythm.MealsOutOfRange;
 import com.picvi.pet_companion_service.exception.rhythm.MealOutsideDay;
 import com.picvi.pet_companion_service.exception.rhythm.AwakeOutOfRange;
 import com.picvi.pet_companion_service.exception.petlog.InvalidCursor;
+import com.picvi.pet_companion_service.exception.petlog.InvalidCourseDose;
 import com.picvi.pet_companion_service.exception.petlog.InvalidLog;
 import com.picvi.pet_companion_service.exception.petlog.LogTimeInFuture;
 import com.picvi.pet_companion_service.exception.petlog.LogNotFound;
@@ -254,6 +255,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(LogTimeInFuture.class)
     public ResponseEntity<ErrorResponse> handleLogTimeInFuture(LogTimeInFuture ex) {
         return error(HttpStatus.BAD_REQUEST, ex);
+    }
+
+    @ExceptionHandler(InvalidCourseDose.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCourseDose(InvalidCourseDose ex) {
+        return error(HttpStatus.UNPROCESSABLE_ENTITY, ex);
     }
 
     @ExceptionHandler(LogNotFound.class)

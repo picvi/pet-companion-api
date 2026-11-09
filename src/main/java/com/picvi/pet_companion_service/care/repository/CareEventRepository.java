@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,6 +22,9 @@ public interface CareEventRepository extends JpaRepository<CareEvent, UUID> {
 
     @EntityGraph(attributePaths = "item")
     Optional<CareEvent> findByIdAndPetId(UUID id, UUID petId);
+
+    @EntityGraph(attributePaths = "item")
+    List<CareEvent> findAllByPetIdAndIdIn(UUID petId, Collection<UUID> ids);
 
     @Query("""
             select e from CareEvent e join fetch e.item

@@ -1,5 +1,6 @@
 package com.picvi.pet_companion_service.medical.service;
 
+import com.picvi.pet_companion_service.care.api.CareApi;
 import com.picvi.pet_companion_service.common.ClientDateValidator;
 import com.picvi.pet_companion_service.dayevent.api.DayEventApi;
 import com.picvi.pet_companion_service.exception.medical.InvalidVetVisit;
@@ -9,14 +10,19 @@ import com.picvi.pet_companion_service.exception.nutrition.VersionConflict;
 import com.picvi.pet_companion_service.medical.domain.AppointmentStatus;
 import com.picvi.pet_companion_service.medical.domain.VetAppointmentRule;
 import com.picvi.pet_companion_service.medical.domain.VetVisitRules;
+import com.picvi.pet_companion_service.medical.domain.VisitOutcomeRule;
 import com.picvi.pet_companion_service.medical.domain.VisitStatus;
 import com.picvi.pet_companion_service.medical.dto.PlanVisitRequest;
 import com.picvi.pet_companion_service.medical.dto.UpcomingVisitsResponse;
 import com.picvi.pet_companion_service.medical.dto.VetVisitDto;
 import com.picvi.pet_companion_service.medical.entity.VetVisit;
 import com.picvi.pet_companion_service.medical.repository.VetVisitRepository;
+import com.picvi.pet_companion_service.medical.service.VisitLinksReader;
+import com.picvi.pet_companion_service.medication.api.MedicationApi;
 import com.picvi.pet_companion_service.pet.dto.PetProfile;
 import com.picvi.pet_companion_service.pet.service.PetService;
+import com.picvi.pet_companion_service.petlog.api.PetLogApi;
+import com.picvi.pet_companion_service.petlog.api.PetLogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,6 +66,14 @@ class VetVisitServiceTest {
     private VetVisitRepository repository;
     @Mock
     private DayEventApi dayEventApi;
+    @Mock
+    private CareApi careApi;
+    @Mock
+    private PetLogApi petLogApi;
+    @Mock
+    private PetLogRecorder petLogRecorder;
+    @Mock
+    private MedicationApi medicationApi;
 
     private VetVisitService service;
 
@@ -67,7 +81,8 @@ class VetVisitServiceTest {
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-10-15T10:00:00Z"), ZoneId.of("Europe/Warsaw"));
         this.service = new VetVisitService(this.clientDateValidator, this.petService, this.repository, new VetVisitRules(),
-                this.dayEventApi, new VetAppointmentRule(), clock);
+                new VisitOutcomeRule(), this.dayEventApi, this.careApi, this.petLogApi, this.petLogRecorder, this.medicationApi,
+                new VisitLinksReader(this.careApi, this.petLogApi, this.medicationApi), new VetAppointmentRule(), clock);
         lenient().when(this.petService.getOwnedPetProfile(OWNER, PET)).thenReturn(
                 new PetProfile(PET, "Mila", BORN, null, TODAY, null, null, 0));
     }
@@ -180,7 +195,7 @@ class VetVisitServiceTest {
         UUID id = UUID.randomUUID();
         when(this.repository.findByIdAndPetId(id, PET)).thenReturn(Optional.of(visit));
 
-        this.service.delete(OWNER, PET, id);
+        this.service.delete(OWNER, PET, id, false, null, null);
 
         verify(this.dayEventApi).cancel(PET, EVENT);
         verify(this.repository).delete(visit);
@@ -191,7 +206,7 @@ class VetVisitServiceTest {
         UUID id = UUID.randomUUID();
         when(this.repository.findByIdAndPetId(id, PET)).thenReturn(Optional.empty());
 
-        this.service.delete(OWNER, PET, id);
+        this.service.delete(OWNER, PET, id, false, null, null);
 
         verify(this.repository, never()).delete(any(VetVisit.class));
     }

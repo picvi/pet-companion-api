@@ -204,4 +204,8 @@ public class VetVisit {
     public boolean hasLog(VisitLogRole role) {
         return this.logs.containsValue(role);
     }
+
+    public boolean hasLinkedTreatment() {
+        return !this.careEventIds.isEmpty() || !this.courseIds.isEmpty() || this.hasLog(VisitLogRole.CLINIC_MEDICINE);
+    }
 }

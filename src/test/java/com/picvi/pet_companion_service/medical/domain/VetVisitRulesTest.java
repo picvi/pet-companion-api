@@ -86,6 +86,8 @@ class VetVisitRulesTest {
     void longTextsAreRejected() {
         assertInvalid(aVisit().note("x".repeat(VetVisitRules.MAX_NOTE_LENGTH + 1)).build(), "note", InvalidVetVisit.TOO_LONG);
         assertInvalid(aVisit().clinic("x".repeat(VetVisitRules.MAX_CLINIC_LENGTH + 1)).build(), "clinic", InvalidVetVisit.TOO_LONG);
+        assertInvalid(aVisit().procedure(new Procedure(VisitProcedureKind.OTHER, "x".repeat(VetVisitRules.MAX_PROCEDURE_NOTE_LENGTH + 1))).build(),
+                "procedure.note", InvalidVetVisit.TOO_LONG);
     }
 
     private void assertInvalid(LogVisitRequest request, String field, String reason) {

@@ -9,6 +9,7 @@ public class VetVisitRules {
     public static final int MAX_CLINIC_LENGTH = 120;
     public static final int MAX_NOTE_LENGTH = 500;
     public static final int MAX_PREP_NOTE_LENGTH = 300;
+    public static final int MAX_PROCEDURE_NOTE_LENGTH = 120;
     public static final int MAX_PLAN_YEARS = 2;
     public static final int MAX_PLAN_MINUTE = 1440 - 60;
     public static final int MAX_CLINIC_MEDICINES = 5;
@@ -64,7 +65,7 @@ public class VetVisitRules {
             throw new InvalidVetVisit("procedure.note", InvalidVetVisit.REQUIRED);
         }
         if (procedure != null) {
-            this.validateLength("procedure.note", procedure.note(), MAX_NOTE_LENGTH);
+            this.validateLength("procedure.note", procedure.note(), MAX_PROCEDURE_NOTE_LENGTH);
         }
     }
 

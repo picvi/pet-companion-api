@@ -14,6 +14,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AccountDeletionCascadeTest extends PostgresTest {
+    private static final List<String> VISIT_LINK_TABLES = List.of("pet_vet_visit_care_event", "pet_vet_visit_log",
+            "pet_vet_visit_course", "pet_vet_visit_test", "pet_vet_visit_procedure");
+
     @Autowired
     private JdbcTemplate jdbc;
     @Autowired
@@ -32,6 +35,8 @@ class AccountDeletionCascadeTest extends PostgresTest {
         UUID pet = this.seed.pet(owner);
         this.seed.everythingAboutPet(pet, owner);
         assertThat(this.petTablesWithoutRows(pet)).as("tables the seed does not cover").isEmpty();
+        UUID visit = this.jdbc.queryForObject("select id from pet_vet_visit where pet_id = ?", UUID.class, pet);
+        assertThat(VISIT_LINK_TABLES).allSatisfy(table -> assertThat(this.linkRows(table, visit)).as(table).isEqualTo(1));
 
         this.accountDeletionService.delete(owner);
 
@@ -39,6 +44,7 @@ class AccountDeletionCascadeTest extends PostgresTest {
         assertThat(this.count("pets", "id", pet)).isZero();
         assertThat(this.count("refresh_tokens", "user_id", owner)).isZero();
         assertThat(this.petTablesWithRows(pet)).isEmpty();
+        assertThat(VISIT_LINK_TABLES).allSatisfy(table -> assertThat(this.linkRows(table, visit)).as(table).isZero());
     }
 
     @Test
@@ -58,6 +64,10 @@ class AccountDeletionCascadeTest extends PostgresTest {
         assertThat(this.nullContributor("pet_condition", "created_by", condition)).isTrue();
         assertThat(this.nullContributor("pet_food", "created_by", petFood)).isTrue();
         assertThat(this.nullContributor("food_product", "created_by", product)).isTrue();
+    }
+
+    private int linkRows(String table, UUID visit) {
+        return this.count(table, "visit_id", visit);
     }
 
     private List<String> petTables() {

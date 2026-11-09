@@ -126,13 +126,20 @@ public class DatabaseSeed {
                 values (?, ?, 'VET', ?, 600, 30, 'NONE', false, now())
                 """, dayEvent, petId, DAY);
         this.jdbc.update("insert into pet_day_event_exception (id, event_id, local_date, skipped) values (?, ?, ?, true)", UUID.randomUUID(), dayEvent, DAY);
+        String careItem = this.jdbc.queryForObject("select min(code) from care_item", String.class);
+        UUID careEvent = UUID.randomUUID();
+        this.jdbc.update("insert into care_event (id, pet_id, item_code, performed_on, created_at) values (?, ?, ?, ?, now())", careEvent, petId, careItem, DAY);
+
+        UUID visit = UUID.randomUUID();
         this.jdbc.update("""
                 insert into pet_vet_visit (id, pet_id, client_id, visited_on, day_event_id, created_at, updated_at)
                 values (?, ?, ?, ?, ?, now(), now())
-                """, UUID.randomUUID(), petId, UUID.randomUUID(), DAY, dayEvent);
-
-        String careItem = this.jdbc.queryForObject("select min(code) from care_item", String.class);
-        this.jdbc.update("insert into care_event (id, pet_id, item_code, performed_on, created_at) values (?, ?, ?, ?, now())", UUID.randomUUID(), petId, careItem, DAY);
+                """, visit, petId, UUID.randomUUID(), DAY, dayEvent);
+        this.jdbc.update("insert into pet_vet_visit_care_event (visit_id, care_event_id) values (?, ?)", visit, careEvent);
+        this.jdbc.update("insert into pet_vet_visit_log (visit_id, log_id, role) values (?, ?, 'CLINIC_MEDICINE')", visit, logId);
+        this.jdbc.update("insert into pet_vet_visit_course (visit_id, course_id) values (?, ?)", visit, course);
+        this.jdbc.update("insert into pet_vet_visit_test (visit_id, kind, waiting_for_results) values (?, 'BLOOD', true)", visit);
+        this.jdbc.update("insert into pet_vet_visit_procedure (visit_id, kind) values (?, 'DENTAL')", visit);
         this.jdbc.update("insert into pet_care_setting (id, pet_id, item_code, reminders_enabled) values (?, ?, ?, true)", UUID.randomUUID(), petId, careItem);
 
         Long activity = this.jdbc.queryForObject("select min(id) from development_activity", Long.class);

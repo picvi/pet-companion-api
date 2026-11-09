@@ -1,5 +1,6 @@
 package com.picvi.pet_companion_service.petlog.dto;
 
+import com.picvi.pet_companion_service.petlog.domain.CourseDose;
 import com.picvi.pet_companion_service.petlog.domain.LogDetail;
 import com.picvi.pet_companion_service.petlog.domain.LogFlag;
 import com.picvi.pet_companion_service.petlog.domain.LogFood;
@@ -33,12 +34,15 @@ public record CreatePetLogRequest(@NotNull UUID clientId,
                                   String dose,
                                   String note,
                                   List<LogFood> foods,
-                                  Integer utcOffsetMinutes) {
+                                  Integer utcOffsetMinutes,
+                                  UUID courseId,
+                                  LocalDate doseOn,
+                                  Integer doseMinute) {
 
     public NewLog toNewLog() {
         LogValues values = new LogValues(this.accident, this.stoolScore, this.flags, this.amountGrams, this.weightGrams,
                 this.durationMinutes, this.wellbeing, this.label, this.dose, this.note, this.foods);
         return new NewLog(this.clientId, this.type, this.detail, values, this.localDate, this.minuteOfDay,
-                this.utcOffsetMinutes);
+                this.utcOffsetMinutes, CourseDose.of(this.courseId, this.doseOn, this.doseMinute));
     }
 }

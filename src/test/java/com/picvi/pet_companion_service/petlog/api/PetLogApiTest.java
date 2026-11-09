@@ -113,17 +113,17 @@ class PetLogApiTest {
 
     private static PetLog weight(int grams, LocalDate on) {
         return new PetLog(null, UUID.randomUUID(), LogType.WEIGHT, UUID.randomUUID(), null,
-                new LogValues(null, null, null, null, grams, null, null, null, null, null), on, 600, loggedAt(on));
+                new LogValues(null, null, null, null, grams, null, null, null, null, null), on, 600, loggedAt(on), null);
     }
 
     private static PetLog medicine(String label, String dose, LocalDate on) {
         return new PetLog(null, UUID.randomUUID(), LogType.MEDICINE, UUID.randomUUID(), null,
-                new LogValues(null, null, null, null, null, null, null, label, dose, null), on, 600, loggedAt(on));
+                new LogValues(null, null, null, null, null, null, null, label, dose, null), on, 600, loggedAt(on), null);
     }
 
     private static PetLog log(LogType type, LocalDate on, int minute) {
         return new PetLog(null, UUID.randomUUID(), type, UUID.randomUUID(), null, LogValues.none(), on,
-                minute, loggedAt(on));
+                minute, loggedAt(on), null);
     }
 
     private static LoggedAt loggedAt(LocalDate on) {

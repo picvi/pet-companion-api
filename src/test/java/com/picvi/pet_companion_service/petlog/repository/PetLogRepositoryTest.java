@@ -141,7 +141,7 @@ class PetLogRepositoryTest extends PostgresTest {
 
     private PetLog save(LogType type, LocalDate date, int minute, LogValues values) {
         LoggedAt loggedAt = new LoggedAt(OffsetDateTime.parse(date + "T10:00+02:00"), 120);
-        return this.repository.saveAndFlush(new PetLog(this.pet, UUID.randomUUID(), type, this.userId, null, values, date, minute, loggedAt));
+        return this.repository.saveAndFlush(new PetLog(this.pet, UUID.randomUUID(), type, this.userId, null, values, date, minute, loggedAt, null));
     }
 
     private void change(PetLog log, String change, String at) {

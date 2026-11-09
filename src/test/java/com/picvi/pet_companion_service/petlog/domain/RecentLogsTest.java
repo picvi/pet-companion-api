@@ -99,6 +99,6 @@ class RecentLogsTest {
         return new PetLogDto(log.id(), log.clientId(), log.type(), log.detail(), log.amountGrams(), log.localDate(), log.minuteOfDay(),
                 log.occurredAt(), log.utcOffsetMinutes(), log.accident(), log.stoolScore(), log.flags(), log.weightGrams(),
                 log.durationMinutes(), log.wellbeing(), log.label(), log.dose(), log.note(), log.loggedBy(), log.createdAt(),
-                log.updatedAt(), java.util.Arrays.stream(foodIds).map(id -> new LogFood(id)).toList());
+                log.updatedAt(), java.util.Arrays.stream(foodIds).map(id -> new LogFood(id)).toList(), null, null, null);
     }
 }

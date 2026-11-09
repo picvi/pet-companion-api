@@ -78,7 +78,7 @@ class PetLogApiViewTest extends PostgresTest {
 
     private void save(UUID pet, UUID user, LogType type, LogDetail detail, int minute, LogValues values) {
         LoggedAt loggedAt = new LoggedAt(OffsetDateTime.parse(DAY + "T10:00+02:00"), 120);
-        this.repository.save(new PetLog(this.petRepository.getReferenceById(pet), UUID.randomUUID(), type, user, detail, values, DAY, minute, loggedAt));
+        this.repository.save(new PetLog(this.petRepository.getReferenceById(pet), UUID.randomUUID(), type, user, detail, values, DAY, minute, loggedAt, null));
     }
 
     private InputStream fixture() {

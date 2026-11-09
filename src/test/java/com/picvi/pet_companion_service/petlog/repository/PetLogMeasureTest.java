@@ -132,7 +132,7 @@ class PetLogMeasureTest extends PostgresTest {
     }
 
     private PetLog save(int minute, LogValues values) {
-        return this.repository.save(new PetLog(this.pet, UUID.randomUUID(), LogType.TOILET, this.userId, null, values, DAY, minute, loggedAt()));
+        return this.repository.save(new PetLog(this.pet, UUID.randomUUID(), LogType.TOILET, this.userId, null, values, DAY, minute, loggedAt(), null));
     }
 
     private static LoggedAt loggedAt() {

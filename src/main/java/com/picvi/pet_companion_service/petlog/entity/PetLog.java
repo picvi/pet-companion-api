@@ -1,6 +1,7 @@
 package com.picvi.pet_companion_service.petlog.entity;
 
 import com.picvi.pet_companion_service.pet.entity.Pet;
+import com.picvi.pet_companion_service.petlog.domain.CourseDose;
 import com.picvi.pet_companion_service.petlog.domain.LogDetail;
 import com.picvi.pet_companion_service.petlog.domain.LogFlag;
 import com.picvi.pet_companion_service.petlog.domain.LogFood;
@@ -76,6 +77,18 @@ public class PetLog {
     private UUID loggedBy;
 
     @Getter
+    @Column(name = "course_id", updatable = false)
+    private UUID courseId;
+
+    @Getter
+    @Column(name = "dose_on", updatable = false)
+    private LocalDate doseOn;
+
+    @Getter
+    @Column(name = "dose_minute", updatable = false)
+    private Integer doseMinute;
+
+    @Getter
     private Boolean accident;
 
     @Getter
@@ -125,11 +138,16 @@ public class PetLog {
     public PetLog() {}
 
     public PetLog(Pet pet, UUID clientId, LogType type, UUID loggedBy, LogDetail detail,
-                  LogValues values, LocalDate localDate, int minuteOfDay, LoggedAt loggedAt) {
+                  LogValues values, LocalDate localDate, int minuteOfDay, LoggedAt loggedAt, CourseDose courseDose) {
         this.pet = pet;
         this.clientId = clientId;
         this.type = type;
         this.loggedBy = loggedBy;
+        if (courseDose != null) {
+            this.courseId = courseDose.courseId();
+            this.doseOn = courseDose.plannedOn();
+            this.doseMinute = courseDose.plannedMinute();
+        }
         this.apply(detail, values, localDate, minuteOfDay, loggedAt);
     }
 

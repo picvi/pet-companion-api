@@ -86,7 +86,7 @@ class PetLogCourseDoseTest extends PostgresTest {
     }
 
     @Test
-    void theSamePlannedDoseCannotBeLoggedTwice() {
+    void aGivenPlannedDoseIsFoundByItsTime() {
         UUID course = this.course();
         this.give(course, DAY, 480, DAY, 480);
 

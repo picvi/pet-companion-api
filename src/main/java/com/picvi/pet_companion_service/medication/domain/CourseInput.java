@@ -8,6 +8,11 @@ public record CourseInput(String name, Integer amountHundredths, DoseUnit unit, 
                           LocalDate startsOn, Integer startMinute,
                           LocalDate endsOn, Integer endsMinute, Integer maxPerDay) {
 
+    public CourseInput startingAt(LocalDate startsOn, Integer startMinute) {
+        return new CourseInput(this.name, this.amountHundredths, this.unit, this.schedule, this.everyDays, this.times,
+                this.withFood, startsOn, startMinute, this.endsOn, this.endsMinute, this.maxPerDay);
+    }
+
     public CoursePlan plan() {
         return new CoursePlan(this.schedule, this.everyDays, this.times == null ? List.of() : this.times, this.startsOn, this.startMinute,
                 this.endsOn, this.endsMinute, null, null);

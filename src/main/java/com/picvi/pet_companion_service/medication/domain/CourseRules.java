@@ -18,13 +18,18 @@ public class CourseRules {
     private static final int LAST_MINUTE = 1439;
 
     public void validate(CourseInput input, LocalDate clientDate) {
+        this.validateStartedCourse(input);
+        this.validateStartWindow(input.startsOn(), clientDate);
+    }
+
+    public void validateStartedCourse(CourseInput input) {
         this.validateName(input.name());
         this.validateAmount(input.amountHundredths());
         this.require("unit", input.unit());
         this.require("withFood", input.withFood());
         this.require("schedule", input.schedule());
         this.validateSchedule(input);
-        this.validateStart(input, clientDate);
+        this.validateStart(input);
         this.validateEnd(input);
     }
 
@@ -89,14 +94,16 @@ public class CourseRules {
         }
     }
 
-    private void validateStart(CourseInput input, LocalDate clientDate) {
+    private void validateStart(CourseInput input) {
         this.require("startsOn", input.startsOn());
         this.require("startMinute", input.startMinute());
         if (input.startMinute() < 0 || input.startMinute() > LAST_MINUTE) {
             throw new InvalidCourse("startMinute", InvalidCourse.OUT_OF_RANGE);
         }
-        if (input.startsOn().isBefore(clientDate.minusDays(START_WINDOW_DAYS))
-                || input.startsOn().isAfter(clientDate.plusDays(START_WINDOW_DAYS))) {
+    }
+
+    private void validateStartWindow(LocalDate startsOn, LocalDate clientDate) {
+        if (startsOn.isBefore(clientDate.minusDays(START_WINDOW_DAYS)) || startsOn.isAfter(clientDate.plusDays(START_WINDOW_DAYS))) {
             throw new InvalidCourse("startsOn", InvalidCourse.OUT_OF_RANGE);
         }
     }

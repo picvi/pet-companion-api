@@ -28,6 +28,7 @@ import com.picvi.pet_companion_service.nutrition.entity.PetFood;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductIngredientRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodProductRepository;
 import com.picvi.pet_companion_service.nutrition.repository.FoodTransitionRepository;
+import com.picvi.pet_companion_service.nutrition.repository.PetDietLock;
 import com.picvi.pet_companion_service.nutrition.repository.PetFoodRepository;
 import com.picvi.pet_companion_service.pet.dto.PetProfile;
 import com.picvi.pet_companion_service.pet.entity.VaccinationStatus;
@@ -69,6 +70,8 @@ class FoodTransitionServiceTest {
     @Mock
     private PetService petService;
     @Mock
+    private PetDietLock dietLock;
+    @Mock
     private RhythmApi rhythmApi;
     @Mock
     private DietService dietService;
@@ -99,7 +102,7 @@ class FoodTransitionServiceTest {
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-10-15T10:00:00Z"), ZoneId.of("Europe/Warsaw"));
-        this.service = new FoodTransitionService(this.clientDateValidator, this.petService, this.rhythmApi, this.dietService,
+        this.service = new FoodTransitionService(this.clientDateValidator, this.petService, this.dietLock, this.rhythmApi, this.dietService,
                 this.changeReader, this.changeRecorder, this.actions, this.tummyReactions, new TransitionPlanCalculator(),
                 this.transitionRepository, this.foodRepository, this.productRepository,
                 this.ingredientRepository, this.conditionApi, new AllergyMatcher(), clock);

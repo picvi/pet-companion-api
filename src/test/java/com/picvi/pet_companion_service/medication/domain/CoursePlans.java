@@ -3,37 +3,37 @@ package com.picvi.pet_companion_service.medication.domain;
 import java.time.LocalDate;
 import java.util.List;
 
-final class CoursePlans {
+public final class CoursePlans {
     private static final int YEAR = 2025;
 
     private CoursePlans() {
     }
 
-    static LocalDate oct(int day) {
+    public static LocalDate oct(int day) {
         return LocalDate.of(YEAR, 10, day);
     }
 
-    static LocalDate nov(int day) {
+    public static LocalDate nov(int day) {
         return LocalDate.of(YEAR, 11, day);
     }
 
-    static int at(int hour) {
+    public static int at(int hour) {
         return hour * 60;
     }
 
-    static CoursePlan daily(List<Integer> times, LocalDate startsOn, int startMinute, LocalDate endsOn, Integer endsMinute) {
+    public static CoursePlan daily(List<Integer> times, LocalDate startsOn, int startMinute, LocalDate endsOn, Integer endsMinute) {
         return new CoursePlan(DoseSchedule.DAILY, null, times, startsOn, startMinute, endsOn, endsMinute, null, null);
     }
 
-    static CoursePlan everyDays(int days, List<Integer> times, LocalDate startsOn, int startMinute, LocalDate endsOn, Integer endsMinute) {
+    public static CoursePlan everyDays(int days, List<Integer> times, LocalDate startsOn, int startMinute, LocalDate endsOn, Integer endsMinute) {
         return new CoursePlan(DoseSchedule.EVERY_N_DAYS, days, times, startsOn, startMinute, endsOn, endsMinute, null, null);
     }
 
-    static CoursePlan asNeeded(LocalDate startsOn) {
+    public static CoursePlan asNeeded(LocalDate startsOn) {
         return new CoursePlan(DoseSchedule.AS_NEEDED, null, List.of(), startsOn, 0, null, null, null, null);
     }
 
-    static CoursePlan stoppedAt(CoursePlan plan, LocalDate on, int minute) {
+    public static CoursePlan stoppedAt(CoursePlan plan, LocalDate on, int minute) {
         return new CoursePlan(plan.schedule(), plan.everyDays(), plan.times(), plan.startsOn(), plan.startMinute(),
                 plan.endsOn(), plan.endsMinute(), on, minute);
     }

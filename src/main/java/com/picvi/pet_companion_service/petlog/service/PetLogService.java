@@ -6,7 +6,9 @@ import com.picvi.pet_companion_service.exception.petlog.LogNotFound;
 import com.picvi.pet_companion_service.exception.petlog.LogTimeInFuture;
 import com.picvi.pet_companion_service.pet.dto.PetProfile;
 import com.picvi.pet_companion_service.pet.service.PetService;
+import com.picvi.pet_companion_service.petlog.api.CourseDoseCheck;
 import com.picvi.pet_companion_service.petlog.api.PetLogSaved;
+import com.picvi.pet_companion_service.petlog.domain.CourseDose;
 import com.picvi.pet_companion_service.petlog.domain.LogChange;
 import com.picvi.pet_companion_service.petlog.domain.LogCursor;
 import com.picvi.pet_companion_service.exception.nutrition.FoodNotActive;
@@ -63,6 +65,7 @@ public class PetLogService {
     private final Clock clock;
     private final RecentLogs recentLogs;
     private final NutritionApi nutritionApi;
+    private final CourseDoseCheck courseDoseCheck;
     private final ApplicationEventPublisher events;
 
     public record LogResult(PetLogDto log, boolean created) {}
@@ -77,14 +80,19 @@ public class PetLogService {
         }
 
         this.logRules.validate(newLog.type(), newLog.detail(), newLog.values());
+        this.logRules.validateCourseDose(newLog.type(), newLog.courseDose());
         this.validateLocalDate(newLog.localDate(), pet.birthDate(), today);
         this.validateFoods(petId, newLog.localDate(), newLog.values().foods());
+        Optional<PetLog> alreadyGiven = this.alreadyGiven(petId, newLog.courseDose());
+        if (alreadyGiven.isPresent()) {
+            return new LogResult(PetLogDto.of(alreadyGiven.get()), false);
+        }
         LoggedAt loggedAt = this.occurredAtCalculator.at(newLog.localDate(), newLog.minuteOfDay(), newLog.utcOffsetMinutes());
 
         LogValues values = this.withNewFoodFlag(petId, newLog.type(), newLog.localDate(), newLog.values());
         PetLog saved = this.logRepository.save(new PetLog(this.petService.getReference(petId), newLog.clientId(),
                 newLog.type(), ownerId, newLog.detail(), values, newLog.localDate(),
-                newLog.minuteOfDay(), loggedAt));
+                newLog.minuteOfDay(), loggedAt, newLog.courseDose()));
         this.recordChange(petId, saved, LogChange.CREATED);
         this.publishSaved(petId, saved);
         return new LogResult(PetLogDto.of(saved), true);
@@ -172,6 +180,19 @@ public class PetLogService {
         PetLog log = this.logRepository.findByIdAndPetId(logId, petId).orElseThrow(LogNotFound::new);
         this.recordChange(petId, log, LogChange.DELETED);
         this.logRepository.delete(log);
+    }
+
+    /** Two phones giving the same planned dose at once wait for each other, so the second finds the first one's log. */
+    private Optional<PetLog> alreadyGiven(UUID petId, CourseDose courseDose) {
+        if (courseDose == null) {
+            return Optional.empty();
+        }
+        this.courseDoseCheck.verify(petId, courseDose);
+        if (!courseDose.answersPlannedTime()) {
+            return Optional.empty();
+        }
+        this.logRepository.lockDose(courseDose.courseId() + ":" + courseDose.plannedOn() + ":" + courseDose.plannedMinute());
+        return this.logRepository.findByCourseIdAndDoseOnAndDoseMinute(courseDose.courseId(), courseDose.plannedOn(), courseDose.plannedMinute());
     }
 
     private void publishSaved(UUID petId, PetLog log) {

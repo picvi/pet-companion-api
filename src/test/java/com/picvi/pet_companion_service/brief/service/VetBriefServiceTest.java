@@ -1,6 +1,7 @@
 package com.picvi.pet_companion_service.brief.service;
 
 import com.picvi.pet_companion_service.breeds.entity.SizeCategory;
+import com.picvi.pet_companion_service.brief.domain.BriefReason;
 import com.picvi.pet_companion_service.brief.domain.Concern;
 import com.picvi.pet_companion_service.brief.domain.ConcernCounter;
 import com.picvi.pet_companion_service.brief.domain.QuestionSuggester;
@@ -20,7 +21,11 @@ import com.picvi.pet_companion_service.exception.brief.InvalidBriefRequest;
 import com.picvi.pet_companion_service.exception.pet.PetNotFound;
 import com.picvi.pet_companion_service.medical.api.MedicalApi;
 import com.picvi.pet_companion_service.medical.api.MedicalApi.VisitSnapshot;
-import com.picvi.pet_companion_service.medical.domain.VisitReason;
+import com.picvi.pet_companion_service.medication.api.MedicationApi;
+import com.picvi.pet_companion_service.medication.api.MedicationApi.CourseInPeriod;
+import com.picvi.pet_companion_service.medication.domain.CourseStatus;
+import com.picvi.pet_companion_service.medication.domain.DoseSchedule;
+import com.picvi.pet_companion_service.medication.domain.DoseUnit;
 import com.picvi.pet_companion_service.nutrition.api.NutritionApi;
 import com.picvi.pet_companion_service.nutrition.domain.IngredientCode;
 import com.picvi.pet_companion_service.nutrition.dto.DietHistoryResponse;
@@ -76,6 +81,8 @@ class VetBriefServiceTest {
     private NutritionApi nutritionApi;
     @Mock
     private MedicalApi medicalApi;
+    @Mock
+    private MedicationApi medicationApi;
 
     private VetBriefService service;
 
@@ -83,7 +90,7 @@ class VetBriefServiceTest {
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-10-15T09:14:03Z"), ZoneId.of("Europe/Warsaw"));
         this.service = new VetBriefService(this.clientDateValidator, this.petService, this.petLogApi, this.conditionApi, this.careApi,
-                this.nutritionApi, this.medicalApi, new ConcernCounter(), new TrendCalculator(), new QuestionSuggester(), clock);
+                this.nutritionApi, this.medicalApi, this.medicationApi, new ConcernCounter(), new TrendCalculator(), new QuestionSuggester(), clock);
     }
 
     private void ownedPet() {
@@ -148,7 +155,7 @@ class VetBriefServiceTest {
 
         assertThat(brief.mainWorry()).isNull();
         assertThat(brief.days()).isEmpty();
-        assertThat(brief.reason()).isEqualTo(VisitReason.CHECK_UP);
+        assertThat(brief.reason()).isEqualTo(BriefReason.CHECK_UP);
         assertThat(brief.period().from()).isEqualTo(LocalDate.of(2026, 10, 9));
         assertThat(brief.pet().ageWeeks()).isEqualTo(11);
         assertThat(brief.pet().microchipNumber()).isEqualTo("616093900123456");
@@ -250,7 +257,7 @@ class VetBriefServiceTest {
     void briefCarriesTheLastVisitOpenConditionsAndWeights() {
         this.ownedPet();
         this.emptyBriefSources();
-        VisitSnapshot visit = new VisitSnapshot(UUID.randomUUID(), LocalDate.of(2026, 9, 28), VisitReason.CHECK_UP, List.of(), "VetCare");
+        VisitSnapshot visit = new VisitSnapshot(UUID.randomUUID(), LocalDate.of(2026, 9, 28), List.of(), "VetCare");
         when(this.medicalApi.lastVisit(PET, TODAY)).thenReturn(Optional.of(visit));
         when(this.conditionApi.openConditions(PET, TODAY)).thenReturn(List.of(new ConditionSnapshot(ConditionKind.ALLERGY,
                 IngredientCode.CHICKEN, ConditionCertainty.SUSPECTED, null, LocalDate.of(2026, 9, 20))));
@@ -264,6 +271,19 @@ class VetBriefServiceTest {
         assertThat(brief.conditions().get(0).certainty()).isEqualTo(ConditionCertainty.SUSPECTED);
         assertThat(brief.pet().weight().grams()).isEqualTo(3400);
         assertThat(brief.pet().weight().previousGrams()).isEqualTo(3050);
+    }
+
+    @Test
+    void briefListsTheCoursesOfThePeriodWithTheirDatesAndDosesGiven() {
+        this.ownedPet();
+        this.emptyBriefSources();
+        CourseInPeriod course = new CourseInPeriod("Metronidazole", 50, DoseUnit.TABLET, DoseSchedule.DAILY, CourseStatus.ACTIVE,
+                LocalDate.of(2026, 10, 12), LocalDate.of(2026, 10, 19), 2);
+        when(this.medicationApi.coursesBetween(PET, LocalDate.of(2026, 10, 9), TODAY, TODAY)).thenReturn(List.of(course));
+
+        VetBriefResponse brief = this.service.brief(OWNER, PET, TODAY, "CHECK_UP", null, null, null);
+
+        assertThat(brief.medicines()).containsExactly(course);
     }
 
     private static LogSnapshot loose(LocalDate day) {

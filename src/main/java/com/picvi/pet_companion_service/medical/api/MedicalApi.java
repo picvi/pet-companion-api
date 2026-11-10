@@ -1,7 +1,7 @@
 package com.picvi.pet_companion_service.medical.api;
 
 import com.picvi.pet_companion_service.medical.domain.VisitOutcome;
-import com.picvi.pet_companion_service.medical.domain.VisitReason;
+import com.picvi.pet_companion_service.medical.domain.VisitStatus;
 import com.picvi.pet_companion_service.medical.entity.VetVisit;
 import com.picvi.pet_companion_service.medical.repository.VetVisitRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,24 +20,24 @@ import java.util.UUID;
 public class MedicalApi {
     private final VetVisitRepository repository;
 
-    public record VisitSnapshot(UUID id, LocalDate visitedOn, VisitReason reason, List<VisitOutcome> outcomes, String clinic) {
+    public record VisitSnapshot(UUID id, LocalDate visitedOn, List<VisitOutcome> outcomes, String clinic) {
         static VisitSnapshot of(VetVisit visit) {
-            return new VisitSnapshot(visit.getId(), visit.getVisitedOn(), visit.getReason(),
+            return new VisitSnapshot(visit.getId(), visit.getVisitedOn(),
                     visit.getOutcomes().stream().sorted(Comparator.naturalOrder()).toList(), visit.getClinic());
         }
     }
 
-    /** The latest visit on or before the given day. */
+    /** The latest visit that happened on or before the given day. */
     @Transactional(readOnly = true)
     public Optional<VisitSnapshot> lastVisit(UUID petId, LocalDate before) {
-        return this.repository.findFirstByPetIdAndVisitedOnLessThanEqualOrderByVisitedOnDescCreatedAtDesc(petId, before)
+        return this.repository.findFirstByPetIdAndStatusAndVisitedOnLessThanEqualOrderByVisitedOnDescCreatedAtDesc(petId, VisitStatus.DONE, before)
                 .map(VisitSnapshot::of);
     }
 
-    /** Visits between two days, both included, newest first. */
+    /** Visits that happened between two days, both included, newest first. */
     @Transactional(readOnly = true)
     public List<VisitSnapshot> visitsBetween(UUID petId, LocalDate from, LocalDate to) {
-        return this.repository.findAllByPetIdAndVisitedOnBetweenOrderByVisitedOnDescCreatedAtDesc(petId, from, to).stream()
+        return this.repository.findAllByPetIdAndStatusAndVisitedOnBetweenOrderByVisitedOnDescCreatedAtDesc(petId, VisitStatus.DONE, from, to).stream()
                 .map(VisitSnapshot::of)
                 .toList();
     }

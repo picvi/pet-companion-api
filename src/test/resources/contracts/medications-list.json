@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-18",
+  "courses": [
+    {
+      "id": "0199b0a1-2222-7000-8000-000000000001",
+      "clientId": "0199b0a1-1111-7000-8000-000000000001",
+      "name": "Metronidazole",
+      "amountHundredths": 50,
+      "unit": "TABLET",
+      "schedule": "DAILY",
+      "everyDays": null,
+      "times": [480, 1080],
+      "withFood": "YES",
+      "startsOn": "2026-10-18",
+      "startMinute": 1080,
+      "endsOn": "2026-10-25",
+      "endsMinute": 1080,
+      "stoppedOn": null,
+      "stoppedMinute": null,
+      "reminders": true,
+      "status": "ACTIVE",
+      "dayNumber": 1,
+      "totalDays": 7,
+      "givenDoses": 1,
+      "lastGiven": { "on": "2026-10-18", "minute": 1072 },
+      "doses": [
+        { "on": "2026-10-18", "minute": 1080, "logId": "0199b0a1-3333-7000-8000-000000000001" },
+        { "on": "2026-10-19", "minute": 480, "logId": null },
+        { "on": "2026-10-19", "minute": 1080, "logId": null },
+        { "on": "2026-10-20", "minute": 480, "logId": null }
+      ],
+      "version": 0
+    },
+    {
+      "id": "0199b0a1-2222-7000-8000-000000000002",
+      "clientId": "0199b0a1-1111-7000-8000-000000000002",
+      "name": "Cerenia",
+      "amountHundredths": 100,
+      "unit": "TABLET",
+      "schedule": "EVERY_N_DAYS",
+      "everyDays": 2,
+      "times": [600],
+      "withFood": "ANY",
+      "startsOn": "2026-10-10",
+      "startMinute": 600,
+      "endsOn": null,
+      "endsMinute": null,
+      "stoppedOn": null,
+      "stoppedMinute": null,
+      "reminders": false,
+      "status": "ACTIVE",
+      "dayNumber": null,
+      "totalDays": null,
+      "givenDoses": 3,
+      "lastGiven": { "on": "2026-10-16", "minute": 1170 },
+      "doses": [],
+      "version": 2
+    }
+  ]
+}

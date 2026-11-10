@@ -6,23 +6,13 @@ import java.util.List;
 import java.util.Optional;
 
 public class VetAppointmentRule {
-    public static final int ATTENDED_EARLY_DAYS = 3;
     public static final int PASSED_VISIBLE_DAYS = 3;
 
-    public Optional<NextVetAppointment> evaluate(List<BookedAppointment> appointments, List<VisitDay> visits, LocalDate date) {
-        return appointments.stream()
-                .filter(appointment -> !appointment.on().plusDays(PASSED_VISIBLE_DAYS).isBefore(date))
-                .filter(appointment -> !this.attended(appointment, visits))
-                .min(Comparator.comparing(BookedAppointment::on).thenComparingInt(BookedAppointment::startMinute))
-                .map(appointment -> new NextVetAppointment(appointment.eventId(), appointment.bookedByVisitId(), appointment.on(),
-                        appointment.startMinute(), status(appointment.on(), date)));
-    }
-
-    private boolean attended(BookedAppointment appointment, List<VisitDay> visits) {
-        LocalDate earliest = appointment.on().minusDays(ATTENDED_EARLY_DAYS);
-        return visits.stream()
-                .filter(visit -> !visit.visitId().equals(appointment.bookedByVisitId()))
-                .anyMatch(visit -> !visit.visitedOn().isBefore(earliest));
+    public Optional<NextVetAppointment> evaluate(List<PlannedAppointment> plans, LocalDate date) {
+        return plans.stream()
+                .filter(plan -> !plan.on().plusDays(PASSED_VISIBLE_DAYS).isBefore(date))
+                .min(Comparator.comparing(PlannedAppointment::on).thenComparingInt(PlannedAppointment::startMinute))
+                .map(plan -> new NextVetAppointment(plan.eventId(), plan.visitId(), plan.on(), plan.startMinute(), status(plan.on(), date)));
     }
 
     private static AppointmentStatus status(LocalDate on, LocalDate date) {

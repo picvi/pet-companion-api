@@ -8,7 +8,6 @@ import com.picvi.pet_companion_service.timeline.domain.TimelineItem;
 
 import com.picvi.pet_companion_service.nutrition.api.FoodChangeEvent;
 import com.picvi.pet_companion_service.medical.domain.VisitOutcome;
-import com.picvi.pet_companion_service.medical.domain.VisitReason;
 import com.picvi.pet_companion_service.lostdog.domain.LostStatus;
 import com.picvi.pet_companion_service.timeline.domain.LostTimelineRow;
 import com.picvi.pet_companion_service.triage.api.TriageApi.CheckSnapshot;
@@ -29,9 +28,9 @@ public record TimelineItemDto(String kind,
                               LostDto lost,
                               CheckSnapshot check) {
 
-    public record VisitDto(VisitReason reason, List<VisitOutcome> outcomes, String clinic) {
+    public record VisitDto(List<VisitOutcome> outcomes, String clinic) {
         static VisitDto of(VisitSnapshot visit) {
-            return new VisitDto(visit.reason(), visit.outcomes(), visit.clinic());
+            return new VisitDto(visit.outcomes(), visit.clinic());
         }
     }
 

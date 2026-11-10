@@ -9,5 +9,6 @@ public record NewLog(UUID clientId,
                      LogValues values,
                      LocalDate localDate,
                      int minuteOfDay,
-                     Integer utcOffsetMinutes) {
+                     Integer utcOffsetMinutes,
+                     CourseDose courseDose) {
 }

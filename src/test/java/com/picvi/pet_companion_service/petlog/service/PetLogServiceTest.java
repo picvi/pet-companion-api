@@ -11,6 +11,8 @@ import com.picvi.pet_companion_service.exception.petlog.LogTimeInFuture;
 import com.picvi.pet_companion_service.exception.nutrition.FoodNotActive;
 import com.picvi.pet_companion_service.nutrition.api.ActiveFood;
 import com.picvi.pet_companion_service.nutrition.api.NutritionApi;
+import com.picvi.pet_companion_service.petlog.api.CourseDoseCheck;
+import com.picvi.pet_companion_service.petlog.domain.CourseDose;
 import com.picvi.pet_companion_service.nutrition.domain.FoodKind;
 import com.picvi.pet_companion_service.petlog.domain.LogFood;
 import com.picvi.pet_companion_service.pet.dto.PetProfile;
@@ -87,6 +89,8 @@ class PetLogServiceTest {
     @Mock
     private NutritionApi nutritionApi;
     @Mock
+    private CourseDoseCheck courseDoseCheck;
+    @Mock
     private ApplicationEventPublisher events;
 
     private PetLogService service;
@@ -94,7 +98,7 @@ class PetLogServiceTest {
     @BeforeEach
     void setUp() {
         this.service = new PetLogService(this.clientDateValidator, this.petService, new PetLogRules(), this.logRepository,
-                this.changeRepository, new OccurredAtCalculator(ZoneId.of("Europe/Warsaw")), CLOCK, new RecentLogs(), this.nutritionApi, this.events);
+                this.changeRepository, new OccurredAtCalculator(ZoneId.of("Europe/Warsaw")), CLOCK, new RecentLogs(), this.nutritionApi, this.courseDoseCheck, this.events);
     }
 
     @Test
@@ -381,13 +385,82 @@ class PetLogServiceTest {
         verify(this.nutritionApi, never()).activeFoods(any(), any());
     }
 
+    @Test
+    void aMedicineAnsweringAPlannedDoseIsLinkedToItsCourse() {
+        this.givenOwnedPet();
+        this.givenNoExistingLog();
+        UUID course = UUID.randomUUID();
+        CourseDose dose = new CourseDose(course, TODAY, 480);
+        when(this.logRepository.findByCourseIdAndDoseOnAndDoseMinute(course, TODAY, 480)).thenReturn(Optional.empty());
+        when(this.logRepository.save(any(PetLog.class))).thenAnswer(call -> call.getArgument(0));
+
+        PetLogService.LogResult result = this.service.log(OWNER_ID, PET_ID,
+                newLog(LogType.MEDICINE, null, medicineValues(), TODAY, 480, 120, dose), TODAY);
+
+        verify(this.courseDoseCheck).verify(PET_ID, dose);
+        assertThat(result.created()).isTrue();
+        assertThat(result.log().courseId()).isEqualTo(course);
+        assertThat(result.log().doseOn()).isEqualTo(TODAY);
+        assertThat(result.log().doseMinute()).isEqualTo(480);
+    }
+
+    @Test
+    void aPlannedDoseThatWasAlreadyGivenReturnsTheFirstLogWithoutSavingAgain() {
+        this.givenOwnedPet();
+        this.givenNoExistingLog();
+        UUID course = UUID.randomUUID();
+        PetLog first = this.existingLog(LogType.MEDICINE, null, medicineValues());
+        when(this.logRepository.findByCourseIdAndDoseOnAndDoseMinute(course, TODAY, 480)).thenReturn(Optional.of(first));
+
+        PetLogService.LogResult result = this.service.log(OWNER_ID, PET_ID,
+                newLog(LogType.MEDICINE, null, medicineValues(), TODAY, 480, 120, new CourseDose(course, TODAY, 480)), TODAY);
+
+        assertThat(result.created()).isFalse();
+        verify(this.logRepository, never()).save(any());
+    }
+
+    @Test
+    void aDoseWithoutAPlannedTimeIsNotLookedUpAndNeverLocks() {
+        this.givenOwnedPet();
+        this.givenNoExistingLog();
+        when(this.logRepository.save(any(PetLog.class))).thenAnswer(call -> call.getArgument(0));
+
+        this.service.log(OWNER_ID, PET_ID,
+                newLog(LogType.MEDICINE, null, medicineValues(), TODAY, 480, 120, new CourseDose(UUID.randomUUID(), null, null)), TODAY);
+
+        verify(this.logRepository, never()).lockDose(any());
+        verify(this.logRepository, never()).findByCourseIdAndDoseOnAndDoseMinute(any(), any(), any());
+    }
+
+    @Test
+    void onlyAMedicineLogCanCarryACourseDose() {
+        this.givenOwnedPet();
+        this.givenNoExistingLog();
+
+        assertThatThrownBy(() -> this.service.log(OWNER_ID, PET_ID,
+                newLog(LogType.WEIGHT, null, new LogValues(null, null, null, null, 2300, null, null, null, null, null), TODAY, 480, 120,
+                        new CourseDose(UUID.randomUUID(), null, null)), TODAY))
+                .isInstanceOf(InvalidLog.class);
+
+        verify(this.logRepository, never()).save(any());
+    }
+
+    private static LogValues medicineValues() {
+        return new LogValues(null, null, null, null, null, null, null, "Metronidazole", "1 tablet", null);
+    }
+
     private PetLog existingLog(LogType type, LogDetail detail, LogValues values) {
         return new PetLog(null, CLIENT_ID, type, OWNER_ID, detail, values, TODAY, 420,
-                new LoggedAt(OffsetDateTime.parse("2026-10-14T07:00+02:00"), 120));
+                new LoggedAt(OffsetDateTime.parse("2026-10-14T07:00+02:00"), 120), null);
     }
 
     private static NewLog newLog(LogType type, LogDetail detail, LogValues values, LocalDate localDate, int minute, Integer offset) {
-        return new NewLog(CLIENT_ID, type, detail, values, localDate, minute, offset);
+        return newLog(type, detail, values, localDate, minute, offset, null);
+    }
+
+    private static NewLog newLog(LogType type, LogDetail detail, LogValues values, LocalDate localDate, int minute, Integer offset,
+                                 CourseDose courseDose) {
+        return new NewLog(CLIENT_ID, type, detail, values, localDate, minute, offset, courseDose);
     }
 
     private void givenOwnedPet() {

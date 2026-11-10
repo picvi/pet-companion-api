@@ -20,7 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -50,6 +52,19 @@ public class CareEventService {
         return this.eventRepository.findTimelinePage(petId, date, includeWholeDay, idBefore, PageRequest.of(0, limit + 1)).stream()
                 .map(CareTimelineRow::of)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<CareEventDto> find(UUID petId, String itemCode, LocalDate performedOn) {
+        return this.eventRepository.findFirstByPetIdAndItemCodeAndPerformedOn(petId, itemCode, performedOn).map(CareEventDto::of);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CareEventDto> findAll(UUID petId, Collection<UUID> eventIds) {
+        if (eventIds.isEmpty()) {
+            return List.of();
+        }
+        return this.eventRepository.findAllByPetIdAndIdIn(petId, eventIds).stream().map(CareEventDto::of).toList();
     }
 
     @Transactional(readOnly = true)

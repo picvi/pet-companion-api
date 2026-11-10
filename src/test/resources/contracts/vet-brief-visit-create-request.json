@@ -2,7 +2,6 @@
   "clientId": "0199a1e2-7c3a-7f00-9a2d-5b6c1e0d8a33",
   "date": "2026-10-15",
   "visitedOn": "2026-10-15",
-  "reason": "SOMETHING_WRONG",
   "outcomes": [
     "TREATMENT",
     "TESTS"

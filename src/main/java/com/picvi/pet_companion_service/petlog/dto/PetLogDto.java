@@ -36,7 +36,10 @@ public record PetLogDto(UUID id,
                         UUID loggedBy,
                         Instant createdAt,
                         Instant updatedAt,
-                        List<LogFood> foods) {
+                        List<LogFood> foods,
+                        UUID courseId,
+                        LocalDate doseOn,
+                        Integer doseMinute) {
 
     public PetLogDto(UUID id, UUID clientId, LogType type, LogDetail detail, Integer amountGrams, LocalDate localDate,
                      int minuteOfDay, OffsetDateTime occurredAt, int utcOffsetMinutes, Boolean accident,
@@ -45,7 +48,7 @@ public record PetLogDto(UUID id,
                      Instant updatedAt) {
         this(id, clientId, type, detail, amountGrams, localDate, minuteOfDay, occurredAt, utcOffsetMinutes, accident,
                 stoolScore, flags, weightGrams, durationMinutes, wellbeing, label, dose, note, loggedBy, createdAt, updatedAt,
-                List.of());
+                List.of(), null, null, null);
     }
 
     public static PetLogDto of(PetLog log) {
@@ -60,6 +63,6 @@ public record PetLogDto(UUID id,
                 log.getLocalDate(), log.getMinuteOfDay(), occurredAt, log.getUtcOffsetMinutes(),
                 log.getAccident(), log.getStoolScore(), flags, log.getWeightGrams(), log.getDurationMinutes(),
                 log.getWellbeing(), log.getLabel(), log.getDose(), log.getNote(), log.getLoggedBy(),
-                log.getCreatedAt(), log.getUpdatedAt(), foods);
+                log.getCreatedAt(), log.getUpdatedAt(), foods, log.getCourseId(), log.getDoseOn(), log.getDoseMinute());
     }
 }

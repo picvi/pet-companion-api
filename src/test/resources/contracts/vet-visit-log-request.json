@@ -1,0 +1,32 @@
+{
+  "clientId": "0199b0a1-5555-7000-8000-000000000001",
+  "date": "2026-10-22",
+  "visitedOn": "2026-10-22",
+  "visitMinute": 600,
+  "clinic": "VetCare Mokotow",
+  "note": "Mild upset tummy from the new food",
+  "justCheck": false,
+  "careItemCodes": ["DHPPI"],
+  "clinicMedicines": [ { "label": "Convenia injection", "dose": "0.5 ml" } ],
+  "homeCourses": [
+    {
+      "clientId": "0199b0a1-1111-7000-8000-000000000001",
+      "name": "Metronidazole",
+      "amountHundredths": 50,
+      "unit": "TABLET",
+      "schedule": "DAILY",
+      "everyDays": null,
+      "times": [480, 1080],
+      "withFood": "YES",
+      "startsOn": "2026-10-18",
+      "startMinute": 1080,
+      "endsOn": "2026-10-25",
+      "endsMinute": 1080,
+      "reminders": true
+    }
+  ],
+  "weightGrams": 4200,
+  "tests": [ { "kind": "BLOOD", "waitingForResults": true } ],
+  "procedure": null,
+  "followUp": { "on": "2026-10-29", "minute": 600 }
+}

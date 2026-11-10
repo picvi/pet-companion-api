@@ -54,6 +54,12 @@ public class PetLogRules {
         this.validateFoods(values.foods());
     }
 
+    public void validateCourseDose(LogType type, CourseDose courseDose) {
+        if (courseDose != null && type != LogType.MEDICINE) {
+            throw new InvalidLog(LogField.COURSE_DOSE, InvalidLog.NOT_ALLOWED);
+        }
+    }
+
     private void validateFoods(List<LogFood> foods) {
         if (foods.size() > FOODS_MAX) {
             throw new InvalidLog(LogField.FOODS, InvalidLog.TOO_MANY);

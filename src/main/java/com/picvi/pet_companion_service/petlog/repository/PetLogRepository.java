@@ -19,6 +19,38 @@ public interface PetLogRepository extends JpaRepository<PetLog, UUID> {
 
     Optional<PetLog> findByIdAndPetId(UUID id, UUID petId);
 
+    List<PetLog> findAllByPetIdAndIdIn(UUID petId, Collection<UUID> ids);
+
+    Optional<PetLog> findByCourseIdAndDoseOnAndDoseMinute(UUID courseId, LocalDate doseOn, Integer doseMinute);
+
+    List<PetLog> findAllByCourseIdInAndDoseOnBetween(Collection<UUID> courseIds, LocalDate from, LocalDate to);
+
+    interface CourseDoseCount {
+        UUID getCourseId();
+
+        long getGiven();
+    }
+
+    @Query("""
+            select l.courseId as courseId, count(l) as given from PetLog l
+            where l.courseId in :courseIds
+            group by l.courseId
+            """)
+    List<CourseDoseCount> countDosesByCourse(Collection<UUID> courseIds);
+
+    @Query("""
+            select l from PetLog l
+            where l.courseId in :courseIds
+              and l.id = (select n.id from PetLog n
+                          where n.courseId = l.courseId
+                          order by n.localDate desc, n.minuteOfDay desc, n.id desc
+                          limit 1)
+            """)
+    List<PetLog> findLastDosePerCourse(Collection<UUID> courseIds);
+
+    @Query(value = "select count(*) from (select pg_advisory_xact_lock(hashtextextended(:key, 0))) as locked", nativeQuery = true)
+    long lockDose(String key);
+
     List<PetLog> findAllByPetIdAndLocalDateOrderByMinuteOfDayAsc(UUID petId, LocalDate localDate);
 
     @Query("""

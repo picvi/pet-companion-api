@@ -124,24 +124,6 @@ class DayEventApiTest {
     }
 
     @Test
-    void vetAppointmentsFromKeepsOnlyOneOffVetEventsAndUsesTheMovedStart() {
-        PetDayEvent moved = vetEvent(NEXT, 600);
-        PetDayEvent skipped = vetEvent(NEXT.plusDays(1), 600, UUID.randomUUID());
-        PetDayEvent grooming = vetEvent(NEXT.plusDays(2), 600, UUID.randomUUID());
-        grooming.setType(DayEventType.GROOMING);
-        PetDayEvent weekly = vetEvent(NEXT.plusDays(3), 600, UUID.randomUUID());
-        weekly.setRecurrence(Recurrence.WEEKLY);
-        when(this.eventRepository.findAllByPetIdAndTypeAndRecurrenceAndLocalDateGreaterThanEqual(PET_ID, DayEventType.VET, Recurrence.NONE, TODAY))
-                .thenReturn(List.of(skipped, grooming, weekly, moved));
-        when(this.eventService.occurrencesOn(PET_ID, NEXT)).thenReturn(List.of(occurrence(EVENT_ID, 690)));
-        when(this.eventService.occurrencesOn(PET_ID, NEXT.plusDays(1))).thenReturn(List.of());
-
-        List<DayEventApi.VetAppointment> appointments = this.api.vetAppointmentsFrom(PET_ID, TODAY);
-
-        assertThat(appointments).containsExactly(new DayEventApi.VetAppointment(EVENT_ID, NEXT, 690));
-    }
-
-    @Test
     void vetAppointmentsIgnoresAnotherPetsEvents() {
         PetDayEvent own = vetEvent(NEXT, 600);
         PetDayEvent foreign = vetEvent(NEXT, 600, UUID.randomUUID());

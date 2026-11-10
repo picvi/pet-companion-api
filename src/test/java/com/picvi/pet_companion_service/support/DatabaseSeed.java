@@ -92,6 +92,17 @@ public class DatabaseSeed {
         this.jdbc.update("insert into pet_log_flag (log_id, flag) values (?, 'NEW_FOOD')", logId);
         this.jdbc.update("insert into pet_log_change (log_id, pet_id, change, changed_at) values (?, ?, 'CREATED', ?)", logId, petId, NOW);
 
+        UUID course = UUID.randomUUID();
+        this.jdbc.update("""
+                insert into medication_course (id, pet_id, client_id, name, amount_hundredths, unit, schedule, with_food, starts_on, start_minute, created_at, updated_at)
+                values (?, ?, ?, 'Amoxicillin', 100, 'TABLET', 'DAILY', 'ANY', ?, 480, now(), now())
+                """, course, petId, UUID.randomUUID(), DAY);
+        this.jdbc.update("insert into medication_dose_time (course_id, minute_of_day) values (?, 480)", course);
+        this.jdbc.update("""
+                insert into pet_log (id, pet_id, client_id, type, local_date, minute_of_day, logged_by, created_at, occurred_at, utc_offset_minutes, course_id, dose_on, dose_minute)
+                values (?, ?, ?, 'MEDICINE', ?, 485, ?, now(), ?, 120, ?, ?, 480)
+                """, UUID.randomUUID(), petId, UUID.randomUUID(), DAY, userId, NOW, course, DAY);
+
         UUID product = this.foodProduct(userId);
         this.jdbc.update("insert into food_product_change (product_id, changed_by, changed_at, reason) values (?, ?, ?, 'CORRECTION')", product, userId, NOW);
         UUID oldFood = this.petFood(petId, product, userId);
@@ -115,13 +126,20 @@ public class DatabaseSeed {
                 values (?, ?, 'VET', ?, 600, 30, 'NONE', false, now())
                 """, dayEvent, petId, DAY);
         this.jdbc.update("insert into pet_day_event_exception (id, event_id, local_date, skipped) values (?, ?, ?, true)", UUID.randomUUID(), dayEvent, DAY);
-        this.jdbc.update("""
-                insert into pet_vet_visit (id, pet_id, client_id, visited_on, reason, next_check_event_id, created_at, updated_at)
-                values (?, ?, ?, ?, 'CHECK_UP', ?, now(), now())
-                """, UUID.randomUUID(), petId, UUID.randomUUID(), DAY, dayEvent);
-
         String careItem = this.jdbc.queryForObject("select min(code) from care_item", String.class);
-        this.jdbc.update("insert into care_event (id, pet_id, item_code, performed_on, created_at) values (?, ?, ?, ?, now())", UUID.randomUUID(), petId, careItem, DAY);
+        UUID careEvent = UUID.randomUUID();
+        this.jdbc.update("insert into care_event (id, pet_id, item_code, performed_on, created_at) values (?, ?, ?, ?, now())", careEvent, petId, careItem, DAY);
+
+        UUID visit = UUID.randomUUID();
+        this.jdbc.update("""
+                insert into pet_vet_visit (id, pet_id, client_id, visited_on, day_event_id, created_at, updated_at)
+                values (?, ?, ?, ?, ?, now(), now())
+                """, visit, petId, UUID.randomUUID(), DAY, dayEvent);
+        this.jdbc.update("insert into pet_vet_visit_care_event (visit_id, care_event_id) values (?, ?)", visit, careEvent);
+        this.jdbc.update("insert into pet_vet_visit_log (visit_id, log_id, role) values (?, ?, 'CLINIC_MEDICINE')", visit, logId);
+        this.jdbc.update("insert into pet_vet_visit_course (visit_id, course_id) values (?, ?)", visit, course);
+        this.jdbc.update("insert into pet_vet_visit_test (visit_id, kind, waiting_for_results) values (?, 'BLOOD', true)", visit);
+        this.jdbc.update("insert into pet_vet_visit_procedure (visit_id, kind) values (?, 'DENTAL')", visit);
         this.jdbc.update("insert into pet_care_setting (id, pet_id, item_code, reminders_enabled) values (?, ?, ?, true)", UUID.randomUUID(), petId, careItem);
 
         Long activity = this.jdbc.queryForObject("select min(id) from development_activity", Long.class);

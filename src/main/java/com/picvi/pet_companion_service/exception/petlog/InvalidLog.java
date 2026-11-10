@@ -8,6 +8,7 @@ public class InvalidLog extends ApiException {
     public static final String NOT_ALLOWED = "NOT_ALLOWED";
     public static final String NOT_ALLOWED_FOR_DETAIL = "NOT_ALLOWED_FOR_DETAIL";
     public static final String WRONG_TYPE = "WRONG_TYPE";
+    public static final String INVALID = "INVALID";
     public static final String RETIRED = "RETIRED";
     public static final String OUT_OF_RANGE = "OUT_OF_RANGE";
     public static final String TOO_LONG = "TOO_LONG";

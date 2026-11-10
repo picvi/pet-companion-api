@@ -15,12 +15,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /** What other modules may ask the pet log. Nothing here exposes the log tables themselves. */
 @Component
@@ -37,6 +40,14 @@ public class PetLogApi {
                     Set.copyOf(log.getFlags()), log.getLocalDate(), log.getMinuteOfDay(), log.getWeightGrams(), log.getNote(), log.getLabel(),
                     log.getDose());
         }
+    }
+
+    /** A dose that answered a planned time of a course. */
+    public record CourseDoseGiven(UUID logId, LocalDate localDate, int minuteOfDay, LocalDate plannedOn, int plannedMinute) {
+    }
+
+    /** How many doses a course has had and when the last one was given. */
+    public record CourseDoseTotals(int given, LocalDate lastOn, int lastMinute) {
     }
 
     /** A weight measurement and the day it was taken. */
@@ -108,6 +119,42 @@ public class PetLogApi {
         return this.logRepository.findAllByPetIdAndLocalDateBetweenOrderByLocalDateAscMinuteOfDayAsc(petId, from, to).stream()
                 .map(PetLogDto::of)
                 .sorted(Comparator.comparing(PetLogDto::localDate).thenComparing(PetLogDto::minuteOfDay).reversed())
+                .toList();
+    }
+
+    /** Doses that answered a planned time between two days, both included, grouped by course. */
+    @Transactional(readOnly = true)
+    public Map<UUID, List<CourseDoseGiven>> courseDosesBetween(Collection<UUID> courseIds, LocalDate from, LocalDate to) {
+        if (courseIds.isEmpty()) {
+            return Map.of();
+        }
+        return this.logRepository.findAllByCourseIdInAndDoseOnBetween(courseIds, from, to).stream()
+                .collect(Collectors.groupingBy(PetLog::getCourseId, Collectors.mapping(
+                        log -> new CourseDoseGiven(log.getId(), log.getLocalDate(), log.getMinuteOfDay(), log.getDoseOn(), log.getDoseMinute()),
+                        Collectors.toList())));
+    }
+
+    /** Every dose of each course counted, with the newest one's time. Courses without a dose are absent. */
+    @Transactional(readOnly = true)
+    public Map<UUID, CourseDoseTotals> courseDoseTotals(Collection<UUID> courseIds) {
+        if (courseIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, Long> counts = this.logRepository.countDosesByCourse(courseIds).stream()
+                .collect(Collectors.toMap(PetLogRepository.CourseDoseCount::getCourseId, PetLogRepository.CourseDoseCount::getGiven));
+        return this.logRepository.findLastDosePerCourse(courseIds).stream()
+                .collect(Collectors.toMap(PetLog::getCourseId,
+                        last -> new CourseDoseTotals(counts.get(last.getCourseId()).intValue(), last.getLocalDate(), last.getMinuteOfDay())));
+    }
+
+    /** The given logs of a pet, in no particular order. Ids that are not the pet's logs are left out. */
+    @Transactional(readOnly = true)
+    public List<LogSnapshot> snapshots(UUID petId, Collection<UUID> logIds) {
+        if (logIds.isEmpty()) {
+            return List.of();
+        }
+        return this.logRepository.findAllByPetIdAndIdIn(petId, logIds).stream()
+                .map(LogSnapshot::of)
                 .toList();
     }
 

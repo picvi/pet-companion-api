@@ -7,6 +7,8 @@ public class InvalidVetVisit extends ApiException {
     public static final String REQUIRED = "REQUIRED";
     public static final String INVALID = "INVALID";
     public static final String TOO_LONG = "TOO_LONG";
+    public static final String TOO_MANY = "TOO_MANY";
+    public static final String ALREADY_LINKED = "ALREADY_LINKED";
 
     public InvalidVetVisit(String field, String reason) {
         super(field + ": " + reason, "INVALID_VET_VISIT");

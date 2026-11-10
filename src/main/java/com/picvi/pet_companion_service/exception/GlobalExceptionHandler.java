@@ -21,6 +21,7 @@ import com.picvi.pet_companion_service.exception.rhythm.MealsOutOfRange;
 import com.picvi.pet_companion_service.exception.rhythm.MealOutsideDay;
 import com.picvi.pet_companion_service.exception.rhythm.AwakeOutOfRange;
 import com.picvi.pet_companion_service.exception.petlog.InvalidCursor;
+import com.picvi.pet_companion_service.exception.petlog.InvalidCourseDose;
 import com.picvi.pet_companion_service.exception.petlog.InvalidLog;
 import com.picvi.pet_companion_service.exception.petlog.LogTimeInFuture;
 import com.picvi.pet_companion_service.exception.petlog.LogNotFound;
@@ -31,8 +32,13 @@ import com.picvi.pet_companion_service.exception.condition.InvalidCondition;
 import com.picvi.pet_companion_service.exception.nutrition.FoodNotTriable;
 import com.picvi.pet_companion_service.exception.nutrition.InvalidTriedFood;
 import com.picvi.pet_companion_service.exception.nutrition.SafetyFoodNotFound;
+import com.picvi.pet_companion_service.exception.dayevent.UseVetPlan;
 import com.picvi.pet_companion_service.exception.medical.InvalidVetVisit;
 import com.picvi.pet_companion_service.exception.medical.VetVisitNotFound;
+import com.picvi.pet_companion_service.exception.medical.VisitStatusConflict;
+import com.picvi.pet_companion_service.exception.medication.CourseHasDoses;
+import com.picvi.pet_companion_service.exception.medication.CourseNotFound;
+import com.picvi.pet_companion_service.exception.medication.InvalidCourse;
 import com.picvi.pet_companion_service.exception.brief.InvalidBriefRequest;
 import com.picvi.pet_companion_service.dto.AllergyMatchResponse;
 import com.picvi.pet_companion_service.exception.nutrition.AllergyMatchRequired;
@@ -253,6 +259,11 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, ex);
     }
 
+    @ExceptionHandler(InvalidCourseDose.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCourseDose(InvalidCourseDose ex) {
+        return error(HttpStatus.UNPROCESSABLE_ENTITY, ex);
+    }
+
     @ExceptionHandler(LogNotFound.class)
     public ResponseEntity<ErrorResponse> handleLogNotFound(LogNotFound ex) {
         return error(HttpStatus.NOT_FOUND, ex);
@@ -338,14 +349,39 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, ex);
     }
 
+    @ExceptionHandler(UseVetPlan.class)
+    public ResponseEntity<ErrorResponse> handleUseVetPlan(UseVetPlan ex) {
+        return error(HttpStatus.UNPROCESSABLE_ENTITY, ex);
+    }
+
     @ExceptionHandler(VetVisitNotFound.class)
     public ResponseEntity<ErrorResponse> handleVetVisitNotFound(VetVisitNotFound ex) {
         return error(HttpStatus.NOT_FOUND, ex);
     }
 
+    @ExceptionHandler(VisitStatusConflict.class)
+    public ResponseEntity<ErrorResponse> handleVisitStatusConflict(VisitStatusConflict ex) {
+        return error(HttpStatus.CONFLICT, ex);
+    }
+
     @ExceptionHandler(InvalidVetVisit.class)
     public ResponseEntity<ErrorResponse> handleInvalidVetVisit(InvalidVetVisit ex) {
         return error(HttpStatus.BAD_REQUEST, ex);
+    }
+
+    @ExceptionHandler(CourseNotFound.class)
+    public ResponseEntity<ErrorResponse> handleCourseNotFound(CourseNotFound ex) {
+        return error(HttpStatus.NOT_FOUND, ex);
+    }
+
+    @ExceptionHandler(InvalidCourse.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCourse(InvalidCourse ex) {
+        return error(HttpStatus.BAD_REQUEST, ex);
+    }
+
+    @ExceptionHandler(CourseHasDoses.class)
+    public ResponseEntity<ErrorResponse> handleCourseHasDoses(CourseHasDoses ex) {
+        return error(HttpStatus.CONFLICT, ex);
     }
 
     @ExceptionHandler(InvalidBriefRequest.class)

@@ -1,6 +1,7 @@
 package com.picvi.pet_companion_service.brief.service;
 
 import com.picvi.pet_companion_service.brief.domain.BriefLimits;
+import com.picvi.pet_companion_service.brief.domain.BriefReason;
 import com.picvi.pet_companion_service.brief.domain.Concern;
 import com.picvi.pet_companion_service.brief.domain.ConcernCounter;
 import com.picvi.pet_companion_service.brief.domain.ConcernCounter.Tally;
@@ -29,7 +30,7 @@ import com.picvi.pet_companion_service.common.ClientDateValidator;
 import com.picvi.pet_companion_service.condition.api.ConditionApi;
 import com.picvi.pet_companion_service.exception.brief.InvalidBriefRequest;
 import com.picvi.pet_companion_service.medical.api.MedicalApi;
-import com.picvi.pet_companion_service.medical.domain.VisitReason;
+import com.picvi.pet_companion_service.medication.api.MedicationApi;
 import com.picvi.pet_companion_service.nutrition.api.NutritionApi;
 import com.picvi.pet_companion_service.nutrition.dto.DietHistoryResponse;
 import com.picvi.pet_companion_service.pet.dto.PetResponse;
@@ -71,6 +72,7 @@ public class VetBriefService {
     private final CareApi careApi;
     private final NutritionApi nutritionApi;
     private final MedicalApi medicalApi;
+    private final MedicationApi medicationApi;
     private final ConcernCounter concernCounter;
     private final TrendCalculator trendCalculator;
     private final QuestionSuggester questionSuggester;
@@ -93,7 +95,7 @@ public class VetBriefService {
     public VetBriefResponse brief(UUID ownerId, UUID petId, LocalDate date, String reasonCode, String concernCode, LocalDate from,
                                   LocalDate to) {
         this.clientDateValidator.validate(date);
-        VisitReason reason = parseReason(reasonCode);
+        BriefReason reason = parseReason(reasonCode);
         Concern concern = parseConcern(concernCode);
         PetResponse pet = this.petService.getPetById(ownerId, petId);
         PeriodDto period = this.resolvePeriod(petId, pet, date, concern, from, to);
@@ -109,7 +111,8 @@ public class VetBriefService {
         return new VetBriefResponse(Instant.now(this.clock), reason, period, this.petDto(petId, pet, date), mainWorry,
                 this.conditionApi.openConditions(petId, date),
                 new FoodDto((int) logs.stream().filter(log -> log.type() == LogType.MEAL).count(), diet),
-                days(logs), new CareDto(vaccines, parasites), this.medicalApi.lastVisit(petId, date).orElse(null),
+                days(logs), new CareDto(vaccines, parasites), this.medicationApi.coursesBetween(petId, period.from(), period.to(), date),
+                this.medicalApi.lastVisit(petId, date).orElse(null),
                 this.questions(concern, diet, vaccines, date));
     }
 
@@ -220,12 +223,12 @@ public class VetBriefService {
         return birthDate != null && from.isBefore(birthDate) ? birthDate : from;
     }
 
-    private static VisitReason parseReason(String code) {
+    private static BriefReason parseReason(String code) {
         if (code == null || code.isBlank()) {
             throw new InvalidBriefRequest("reason", InvalidBriefRequest.REQUIRED);
         }
         try {
-            return VisitReason.valueOf(code);
+            return BriefReason.valueOf(code);
         } catch (IllegalArgumentException e) {
             throw new InvalidBriefRequest("reason", InvalidBriefRequest.INVALID);
         }

@@ -1,6 +1,7 @@
 package com.picvi.pet_companion_service.dayevent.service;
 
 import com.picvi.pet_companion_service.common.ClientDateValidator;
+import com.picvi.pet_companion_service.dayevent.api.DayEventRemoved;
 import com.picvi.pet_companion_service.dayevent.domain.DayEventRules;
 import com.picvi.pet_companion_service.dayevent.domain.DayEventType;
 import com.picvi.pet_companion_service.dayevent.domain.EventDefinition;
@@ -15,8 +16,10 @@ import com.picvi.pet_companion_service.dayevent.entity.PetDayEventException;
 import com.picvi.pet_companion_service.dayevent.repository.PetDayEventExceptionRepository;
 import com.picvi.pet_companion_service.dayevent.repository.PetDayEventRepository;
 import com.picvi.pet_companion_service.exception.dayevent.DayEventNotFound;
+import com.picvi.pet_companion_service.exception.dayevent.UseVetPlan;
 import com.picvi.pet_companion_service.pet.service.PetService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,11 +37,15 @@ public class DayEventService {
     private final EventOccurrenceExpander occurrenceExpander;
     private final PetDayEventRepository eventRepository;
     private final PetDayEventExceptionRepository exceptionRepository;
+    private final ApplicationEventPublisher events;
 
     public DayEventDto create(UUID ownerId, UUID petId, DayEventType type, String title, LocalDate localDate, int startMinute,
                               int durationMinutes, Recurrence recurrence, boolean planAround, LocalDate date) {
         this.clientDateValidator.validate(date);
         this.petService.getOwnedPetProfile(ownerId, petId);
+        if (type == DayEventType.VET) {
+            throw new UseVetPlan();
+        }
         this.eventRules.validate(startMinute, durationMinutes, title, localDate, date);
 
         PetDayEvent event = new PetDayEvent(this.petService.getReference(petId));
@@ -51,6 +58,9 @@ public class DayEventService {
         this.clientDateValidator.validate(date);
         this.petService.getOwnedPetProfile(ownerId, petId);
         PetDayEvent event = this.findEvent(petId, eventId);
+        if (type == DayEventType.VET && event.getType() != DayEventType.VET) {
+            throw new UseVetPlan();
+        }
         this.eventRules.validate(startMinute, durationMinutes, title, localDate, date);
 
         this.apply(event, type, title, localDate, startMinute, durationMinutes, recurrence, planAround);
@@ -60,7 +70,9 @@ public class DayEventService {
     public void delete(UUID ownerId, UUID petId, UUID eventId, LocalDate date) {
         this.clientDateValidator.validate(date);
         this.petService.getOwnedPetProfile(ownerId, petId);
-        this.eventRepository.delete(this.findEvent(petId, eventId));
+        PetDayEvent event = this.findEvent(petId, eventId);
+        this.events.publishEvent(new DayEventRemoved(petId, eventId, event.getType()));
+        this.eventRepository.delete(event);
     }
 
     public void changeOccurrence(UUID ownerId, UUID petId, UUID eventId, LocalDate occurrenceDate, boolean skipped,

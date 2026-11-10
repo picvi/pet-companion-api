@@ -16,6 +16,7 @@ public enum LogField {
     DOSE("dose"),
     NOTE("note"),
     FOODS("foods"),
+    COURSE_DOSE("courseDose"),
     UTC_OFFSET_MINUTES("utcOffsetMinutes");
 
     private final String jsonName;

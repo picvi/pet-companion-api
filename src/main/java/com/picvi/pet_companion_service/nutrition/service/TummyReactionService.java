@@ -31,9 +31,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Reads the tummy logs of a running food change and reacts: slows the step down, or pauses the plan. It runs after a log is
- * saved and again when the diet is read, so a reaction lost with the in-memory event is still applied. Both ways are
- * idempotent: a step is slowed down once, and the plan is paused once per step.
+ * Reads the tummy logs of a running food change and reacts: slows the step down, or pauses the plan. It runs when the diet is
+ * read and is idempotent: a step is slowed down once, and the plan is paused once per step. With no food change running it
+ * returns before taking a lock.
  */
 @Service
 @RequiredArgsConstructor
@@ -61,7 +61,9 @@ public class TummyReactionService {
 
     @Transactional
     public void apply(UUID petId, LocalDate date) {
-        this.transitionRepository.lockOpen(petId);
+        if (this.transitionRepository.lockOpen(petId).isEmpty()) {
+            return;
+        }
         Optional<FoodTransition> open = this.transitionRepository.findOpen(petId, List.of(TransitionStatus.ACTIVE, TransitionStatus.PAUSED))
                 .filter(transition -> transition.getStatus() == TransitionStatus.ACTIVE);
         if (open.isEmpty()) {

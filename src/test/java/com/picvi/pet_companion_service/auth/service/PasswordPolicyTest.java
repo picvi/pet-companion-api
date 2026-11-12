@@ -12,7 +12,8 @@ class PasswordPolicyTest {
     private final PasswordPolicy policy = new PasswordPolicy();
 
     @ParameterizedTest
-    @ValueSource(strings = {"password1", "PASSWORD123", "12345678", "11111111", "abcdefgh", "87654321", "qwerty123"})
+    @ValueSource(strings = {"password123", "PASSWORD1234", "1234567890", "1111111111", "abcdefghij", "0987654321", "qwertyuiop",
+            "Curlup-2026-x", "my-pawstep-pw"})
     void rejectsCommonRepeatedAndSequentialPasswords(String password) {
         assertThatThrownBy(() -> this.policy.check(password, "viki", "viki@example.com"))
                 .isInstanceOf(PasswordTooCommon.class);

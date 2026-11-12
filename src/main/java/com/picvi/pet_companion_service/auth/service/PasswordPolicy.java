@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 public class PasswordPolicy {
     private static final String COMMON_PASSWORDS = "security/common-passwords.txt";
     private static final int MIN_PERSONAL_PART = 4;
+    /** Names of the app itself: the first thing someone guesses for an account of this app. */
+    private static final Set<String> APP_NAMES = Set.of("curlup", "pawstep");
 
     private final Set<String> common = loadCommonPasswords();
 
@@ -26,7 +28,8 @@ public class PasswordPolicy {
                 || isRepeatedCharacter(lower)
                 || isSequence(lower)
                 || containsPersonalPart(lower, username)
-                || containsPersonalPart(lower, localPart(email))) {
+                || containsPersonalPart(lower, localPart(email))
+                || APP_NAMES.stream().anyMatch(lower::contains)) {
             throw new PasswordTooCommon();
         }
     }
@@ -72,7 +75,7 @@ public class PasswordPolicy {
                 new ClassPathResource(COMMON_PASSWORDS).getInputStream(), StandardCharsets.UTF_8))) {
             return reader.lines()
                     .map(line -> line.trim().toLowerCase(Locale.ROOT))
-                    .filter(line -> !line.isEmpty())
+                    .filter(line -> !line.isEmpty() && !line.startsWith("#"))
                     .collect(Collectors.toUnmodifiableSet());
         } catch (IOException e) {
             throw new UncheckedIOException(e);

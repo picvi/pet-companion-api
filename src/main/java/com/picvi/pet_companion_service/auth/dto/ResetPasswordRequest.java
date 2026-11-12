@@ -8,5 +8,5 @@ import jakarta.validation.constraints.Size;
 public record ResetPasswordRequest(
         @NotBlank @Email @Size(max = 255) String email,
         @NotBlank @Pattern(regexp = "\\d{6}", message = "must be 6 digits") String code,
-        @NotBlank @Size(min = 8, max = 72) String newPassword) {
+        @NotBlank @Size(min = 10, max = 72) String newPassword) {
 }

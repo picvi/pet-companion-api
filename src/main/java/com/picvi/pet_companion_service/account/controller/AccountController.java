@@ -1,6 +1,7 @@
 package com.picvi.pet_companion_service.account.controller;
 
 import com.picvi.pet_companion_service.account.dto.ChangePasswordRequest;
+import com.picvi.pet_companion_service.account.dto.DeleteAccountRequest;
 import com.picvi.pet_companion_service.account.service.AccountDeletionService;
 import com.picvi.pet_companion_service.account.service.PasswordService;
 import com.picvi.pet_companion_service.auth.dto.LoginResponse;
@@ -25,9 +26,9 @@ public class AccountController {
         return this.passwordService.change(userId, request);
     }
 
-    @DeleteMapping
+    @PostMapping("/deletion")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@AuthenticationPrincipal UUID userId) {
-        this.accountDeletionService.delete(userId);
+    public void delete(@AuthenticationPrincipal UUID userId, @Valid @RequestBody DeleteAccountRequest request) {
+        this.accountDeletionService.delete(userId, request.password());
     }
 }

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,6 +15,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AccountDeletionCascadeTest extends PostgresTest {
+    private static final String PASSWORD = "old-secret-1";
     private static final List<String> VISIT_LINK_TABLES = List.of("pet_vet_visit_care_event", "pet_vet_visit_log",
             "pet_vet_visit_course", "pet_vet_visit_test", "pet_vet_visit_procedure");
 
@@ -21,6 +23,8 @@ class AccountDeletionCascadeTest extends PostgresTest {
     private JdbcTemplate jdbc;
     @Autowired
     private AccountDeletionService accountDeletionService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     private DatabaseSeed seed;
 
@@ -38,7 +42,7 @@ class AccountDeletionCascadeTest extends PostgresTest {
         UUID visit = this.jdbc.queryForObject("select id from pet_vet_visit where pet_id = ?", UUID.class, pet);
         assertThat(VISIT_LINK_TABLES).allSatisfy(table -> assertThat(this.linkRows(table, visit)).as(table).isEqualTo(1));
 
-        this.accountDeletionService.delete(owner);
+        this.deleteWithPassword(owner);
 
         assertThat(this.count("users", "id", owner)).isZero();
         assertThat(this.count("pets", "id", pet)).isZero();
@@ -53,7 +57,7 @@ class AccountDeletionCascadeTest extends PostgresTest {
         this.jdbc.update("insert into password_reset_codes (id, user_id, code_hash, expires_at, created_at, last_sent_at, window_started_at)"
                 + " values (?, ?, 'hash', now(), now(), now(), now())", UUID.randomUUID(), owner);
 
-        this.accountDeletionService.delete(owner);
+        this.deleteWithPassword(owner);
 
         assertThat(this.count("password_reset_codes", "user_id", owner)).isZero();
     }
@@ -68,13 +72,18 @@ class AccountDeletionCascadeTest extends PostgresTest {
         UUID product = this.seed.foodProduct(contributor);
         UUID petFood = this.seed.petFood(pet, product, contributor);
 
-        this.accountDeletionService.delete(contributor);
+        this.deleteWithPassword(contributor);
 
         assertThat(this.count("users", "id", contributor)).isZero();
         assertThat(this.nullContributor("pet_log", "logged_by", log)).isTrue();
         assertThat(this.nullContributor("pet_condition", "created_by", condition)).isTrue();
         assertThat(this.nullContributor("pet_food", "created_by", petFood)).isTrue();
         assertThat(this.nullContributor("food_product", "created_by", product)).isTrue();
+    }
+
+    private void deleteWithPassword(UUID user) {
+        this.jdbc.update("update users set password_hash = ? where id = ?", this.passwordEncoder.encode(PASSWORD), user);
+        this.accountDeletionService.delete(user, PASSWORD);
     }
 
     private int linkRows(String table, UUID visit) {

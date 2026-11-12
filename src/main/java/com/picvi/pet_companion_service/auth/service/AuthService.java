@@ -16,6 +16,7 @@ import com.picvi.pet_companion_service.pet.repository.PetRepository;
 import com.picvi.pet_companion_service.user.entity.User;
 import com.picvi.pet_companion_service.user.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final EmailVerificationService emailVerificationService;
     private final PasswordResetService passwordResetService;
+    @Qualifier(AttemptLimiterConfig.LOGIN)
     private final LoginAttemptLimiter loginAttemptLimiter;
     private final PasswordPolicy passwordPolicy;
 

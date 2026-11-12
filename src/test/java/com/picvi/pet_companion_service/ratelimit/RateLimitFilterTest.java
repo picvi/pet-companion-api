@@ -43,6 +43,28 @@ class RateLimitFilterTest {
         assertThat(post("/auth/refresh", "1.1.1.1").getStatus()).isEqualTo(429);
     }
 
+    @Test
+    void accountDeletionIsLimitedToTenRequestsPerQuarterHourPerAddress() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            assertThat(post("/me/deletion", "1.1.1.1").getStatus()).isEqualTo(200);
+        }
+
+        MockHttpServletResponse eleventh = post("/me/deletion", "1.1.1.1");
+
+        assertThat(eleventh.getStatus()).isEqualTo(429);
+        assertThat(eleventh.getHeader("Retry-After")).isNotNull();
+        assertThat(post("/me/deletion", "2.2.2.2").getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    void passwordChangeIsLimitedToTenRequestsPerQuarterHourPerAddress() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            assertThat(post("/me/password", "1.1.1.1").getStatus()).isEqualTo(200);
+        }
+
+        assertThat(post("/me/password", "1.1.1.1").getStatus()).isEqualTo(429);
+    }
+
     private MockHttpServletResponse post(String uri, String address) throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", uri);
         request.setRemoteAddr(address);

@@ -3,6 +3,8 @@ package com.picvi.pet_companion_service.account.service;
 import com.picvi.pet_companion_service.account.dto.ChangePasswordRequest;
 import com.picvi.pet_companion_service.auth.dto.LoginResponse;
 import com.picvi.pet_companion_service.auth.service.AuthService;
+import com.picvi.pet_companion_service.auth.service.LoginAttemptLimiter;
+import com.picvi.pet_companion_service.exception.TooManyLoginAttempts;
 import com.picvi.pet_companion_service.auth.service.PasswordPolicy;
 import com.picvi.pet_companion_service.exception.PasswordTooCommon;
 import com.picvi.pet_companion_service.auth.service.RefreshTokenService;
@@ -48,13 +50,16 @@ class PasswordServiceTest {
     private AuthService authService;
     @Mock
     private PasswordPolicy passwordPolicy;
+    @Mock
+    private LoginAttemptLimiter reauthAttemptLimiter;
 
     private PasswordService service;
     private User user;
 
     @BeforeEach
     void setUp() {
-        this.service = new PasswordService(this.usersRepository, this.passwordEncoder, this.refreshTokenService, this.authService, this.passwordPolicy);
+        this.service = new PasswordService(this.usersRepository, this.passwordEncoder, this.refreshTokenService, this.authService, this.passwordPolicy,
+                this.reauthAttemptLimiter);
         this.user = new User();
         this.user.setPassword_hash(OLD_HASH);
         lenient().when(this.usersRepository.findById(USER_ID)).thenReturn(Optional.of(this.user));
@@ -69,6 +74,18 @@ class PasswordServiceTest {
 
         assertThat(this.user.getPassword_hash()).isEqualTo(OLD_HASH);
         verifyNoInteractions(this.refreshTokenService, this.authService);
+        verify(this.reauthAttemptLimiter).recordFailure(USER_ID.toString());
+        verify(this.reauthAttemptLimiter, never()).recordSuccess(USER_ID.toString());
+    }
+
+    @Test
+    void lockedUserIsRefusedBeforeThePasswordIsCompared() {
+        doThrow(new TooManyLoginAttempts(60)).when(this.reauthAttemptLimiter).checkAllowed(USER_ID.toString());
+
+        assertThatThrownBy(() -> this.service.change(USER_ID, new ChangePasswordRequest("old-secret-1", "new-secret-2")))
+                .isInstanceOf(TooManyLoginAttempts.class);
+
+        verifyNoInteractions(this.passwordEncoder, this.refreshTokenService, this.authService);
     }
 
     @Test
@@ -107,6 +124,7 @@ class PasswordServiceTest {
         InOrder order = inOrder(this.refreshTokenService, this.authService);
         order.verify(this.refreshTokenService).revokeAll(USER_ID);
         order.verify(this.authService).issueSession(this.user);
+        verify(this.reauthAttemptLimiter).recordSuccess(USER_ID.toString());
     }
 
     @Test

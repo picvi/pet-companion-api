@@ -1,8 +1,6 @@
 package com.picvi.pet_companion_service.auth.service;
 
 import com.picvi.pet_companion_service.exception.TooManyLoginAttempts;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -14,17 +12,24 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Per-account brake on password guessing, independent of the caller's IP. Unknown usernames are counted the same way,
  * so the lock does not reveal which accounts exist. State is in memory, like the IP rate limiter.
+ * <p>
+ * Two instances exist (see {@code AttemptLimiterConfig}): one for login keyed by username, and one for
+ * re-authentication ({@code POST /me/password}, {@code POST /me/deletion}) keyed by user id.
  */
-@Component
-@RequiredArgsConstructor
 public class LoginAttemptLimiter {
-    static final int MAX_FAILURES = 10;
     static final Duration WINDOW = Duration.ofMinutes(15);
-    static final Duration LOCK = Duration.ofMinutes(15);
     private static final int PURGE_THRESHOLD = 10_000;
 
     private final Clock clock;
+    private final int maxFailures;
+    private final Duration lock;
     private final Map<String, Attempts> attempts = new ConcurrentHashMap<>();
+
+    public LoginAttemptLimiter(Clock clock, int maxFailures, Duration lock) {
+        this.clock = clock;
+        this.maxFailures = maxFailures;
+        this.lock = lock;
+    }
 
     public void checkAllowed(String username) {
         Attempts current = this.attempts.get(key(username));
@@ -41,7 +46,7 @@ public class LoginAttemptLimiter {
         }
         this.attempts.compute(key(username), (name, current) -> {
             Attempts base = current == null || current.isStale(now) ? Attempts.EMPTY : current;
-            return base.afterFailure(now);
+            return base.afterFailure(now, this.maxFailures, this.lock);
         });
     }
 
@@ -67,10 +72,10 @@ public class LoginAttemptLimiter {
             return this.windowStart != null && !now.isBefore(this.windowStart.plus(WINDOW));
         }
 
-        Attempts afterFailure(Instant now) {
+        Attempts afterFailure(Instant now, int maxFailures, Duration lockDuration) {
             Instant start = this.windowStart == null ? now : this.windowStart;
             int count = this.failures + 1;
-            Instant lock = count >= MAX_FAILURES ? now.plus(LOCK) : null;
+            Instant lock = count >= maxFailures ? now.plus(lockDuration) : null;
             return new Attempts(count, start, lock);
         }
     }

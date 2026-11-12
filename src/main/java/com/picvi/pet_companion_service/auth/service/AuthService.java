@@ -111,7 +111,9 @@ public class AuthService {
     /** A correct code proves the mailbox, so the user gets a session right away. Wrong guesses are counted and kept. */
     @Transactional(noRollbackFor = InvalidResetCode.class)
     public LoginResponse resetPassword(String email, String code, String newPassword) {
-        return this.buildAuthResponse(this.passwordResetService.reset(email, code, newPassword));
+        User user = this.passwordResetService.reset(email, code, newPassword);
+        this.loginAttemptLimiter.recordSuccess(user.getUsername());
+        return this.buildAuthResponse(user);
     }
 
     @Transactional(noRollbackFor = InvalidRefreshToken.class)

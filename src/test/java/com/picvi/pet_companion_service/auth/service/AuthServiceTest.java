@@ -129,6 +129,19 @@ class AuthServiceTest {
     }
 
     @Test
+    void resetPasswordClearsTheLoginLock() {
+        User user = existingUser();
+        when(passwordResetService.reset("viki@example.com", "123456", "new-secret-2")).thenReturn(user);
+        when(jwtService.generateToken(user)).thenReturn("access");
+        when(refreshTokenService.issue(user)).thenReturn("refresh");
+        when(petRepository.existsByOwnerId(USER_ID)).thenReturn(false);
+
+        authService.resetPassword("viki@example.com", "123456", "new-secret-2");
+
+        verify(loginAttemptLimiter).recordSuccess(user.getUsername());
+    }
+
+    @Test
     void loginRejectsUnverifiedEmail() {
         User user = existingUser();
         user.setEmailVerified(false);

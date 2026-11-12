@@ -1,15 +1,18 @@
 package com.picvi.pet_companion_service.auth.controller;
 
+import com.picvi.pet_companion_service.auth.dto.ForgotPasswordRequest;
 import com.picvi.pet_companion_service.auth.dto.LoginRequest;
 import com.picvi.pet_companion_service.auth.dto.LoginResponse;
 import com.picvi.pet_companion_service.auth.dto.RefreshTokenRequest;
 import com.picvi.pet_companion_service.auth.dto.RegisterRequest;
 import com.picvi.pet_companion_service.auth.dto.RegisterResponse;
 import com.picvi.pet_companion_service.auth.dto.ResendVerificationRequest;
+import com.picvi.pet_companion_service.auth.dto.ResetPasswordRequest;
 import com.picvi.pet_companion_service.auth.dto.VerifyEmailRequest;
 import com.picvi.pet_companion_service.auth.dto.UserResponse;
 import com.picvi.pet_companion_service.auth.service.AuthService;
 import com.picvi.pet_companion_service.auth.service.EmailVerificationService;
+import com.picvi.pet_companion_service.auth.service.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +27,7 @@ import java.util.UUID;
 public class AuthController {
     private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
@@ -40,6 +44,17 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
         this.emailVerificationService.resend(request.email());
+    }
+
+    @PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        this.passwordResetService.request(request.email());
+    }
+
+    @PostMapping("/reset-password")
+    public LoginResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return this.authService.resetPassword(request.email(), request.code(), request.newPassword());
     }
 
     @PostMapping("/login")

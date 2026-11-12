@@ -48,6 +48,17 @@ class AccountDeletionCascadeTest extends PostgresTest {
     }
 
     @Test
+    void deletionRemovesPendingPasswordResetCodes() {
+        UUID owner = this.seed.user();
+        this.jdbc.update("insert into password_reset_codes (id, user_id, code_hash, expires_at, created_at, last_sent_at, window_started_at)"
+                + " values (?, ?, 'hash', now(), now(), now(), now())", UUID.randomUUID(), owner);
+
+        this.accountDeletionService.delete(owner);
+
+        assertThat(this.count("password_reset_codes", "user_id", owner)).isZero();
+    }
+
+    @Test
     void deletingAContributorKeepsTheOwnersRecords() {
         UUID owner = this.seed.user();
         UUID contributor = this.seed.user();

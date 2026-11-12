@@ -5,9 +5,10 @@ import com.picvi.pet_companion_service.auth.dto.LoginResponse;
 import com.picvi.pet_companion_service.auth.dto.RegisterRequest;
 import com.picvi.pet_companion_service.auth.dto.RegisterResponse;
 import com.picvi.pet_companion_service.exception.EmailNotVerified;
-import com.picvi.pet_companion_service.exception.PasswordIncorrect;
+import com.picvi.pet_companion_service.exception.InvalidCredentials;
+import com.picvi.pet_companion_service.exception.PasswordTooCommon;
+import com.picvi.pet_companion_service.exception.TooManyLoginAttempts;
 import com.picvi.pet_companion_service.exception.UserAlreadyExistsException;
-import com.picvi.pet_companion_service.exception.UserDoesNotExist;
 import com.picvi.pet_companion_service.pet.repository.PetRepository;
 import com.picvi.pet_companion_service.user.entity.User;
 import com.picvi.pet_companion_service.user.repository.UsersRepository;
@@ -26,7 +27,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +50,12 @@ class AuthServiceTest {
     private RefreshTokenService refreshTokenService;
     @Mock
     private EmailVerificationService emailVerificationService;
+    @Mock
+    private PasswordResetService passwordResetService;
+    @Mock
+    private LoginAttemptLimiter loginAttemptLimiter;
+    @Mock
+    private PasswordPolicy passwordPolicy;
     @InjectMocks
     private AuthService authService;
 
@@ -102,6 +112,20 @@ class AuthServiceTest {
         assertThat(response.accessToken()).isEqualTo("access");
         assertThat(response.refreshToken()).isEqualTo("refresh");
         assertThat(response.user().email()).isEqualTo("viki@example.com");
+    }
+
+    @Test
+    void resetPasswordLogsTheUserIn() {
+        User user = existingUser();
+        when(passwordResetService.reset("viki@example.com", "123456", "new-secret-2")).thenReturn(user);
+        when(jwtService.generateToken(user)).thenReturn("access");
+        when(refreshTokenService.issue(user)).thenReturn("refresh");
+        when(petRepository.existsByOwnerId(USER_ID)).thenReturn(false);
+
+        LoginResponse response = authService.resetPassword("viki@example.com", "123456", "new-secret-2");
+
+        assertThat(response.accessToken()).isEqualTo("access");
+        assertThat(response.refreshToken()).isEqualTo("refresh");
     }
 
     @Test
@@ -175,16 +199,38 @@ class AuthServiceTest {
         when(passwordEncoder.matches("wrong", "hash")).thenReturn(false);
 
         assertThatThrownBy(() -> authService.login(new LoginRequest("viki", "wrong")))
-                .isInstanceOf(PasswordIncorrect.class);
+                .isInstanceOf(InvalidCredentials.class);
+        verify(loginAttemptLimiter).recordFailure("viki");
         verify(refreshTokenService, never()).issue(any(User.class));
     }
 
     @Test
     void loginRejectsUnknownUser() {
         when(usersRepository.findByUsername("ghost")).thenReturn(null);
+        when(passwordEncoder.encode(anyString())).thenReturn("dummy-hash");
 
         assertThatThrownBy(() -> authService.login(new LoginRequest("ghost", "secret123")))
-                .isInstanceOf(UserDoesNotExist.class);
+                .isInstanceOf(InvalidCredentials.class);
+        verify(passwordEncoder).matches("secret123", "dummy-hash");
+        verify(loginAttemptLimiter).recordFailure("ghost");
+    }
+
+    @Test
+    void loginIsRefusedWhileTheAccountIsLocked() {
+        doThrow(new TooManyLoginAttempts(60)).when(loginAttemptLimiter).checkAllowed("viki");
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("viki", "secret123")))
+                .isInstanceOf(TooManyLoginAttempts.class);
+        verifyNoInteractions(usersRepository, passwordEncoder);
+    }
+
+    @Test
+    void registerRejectsACommonPassword() {
+        doThrow(new PasswordTooCommon()).when(passwordPolicy).check("password1", "viki", "viki@example.com");
+
+        assertThatThrownBy(() -> authService.register(new RegisterRequest("viki", "viki@example.com", "password1")))
+                .isInstanceOf(PasswordTooCommon.class);
+        verify(usersRepository, never()).save(any(User.class));
     }
 
     @Test
@@ -197,6 +243,7 @@ class AuthServiceTest {
         when(petRepository.existsByOwnerId(USER_ID)).thenReturn(true);
 
         LoginResponse response = authService.login(new LoginRequest("viki", "secret123"));
+        verify(loginAttemptLimiter).recordSuccess("viki");
 
         assertThat(response.accessToken()).isEqualTo("access");
         assertThat(response.refreshToken()).isEqualTo("refresh");

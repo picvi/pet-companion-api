@@ -3,6 +3,7 @@ package com.picvi.pet_companion_service.account.service;
 import com.picvi.pet_companion_service.account.dto.ChangePasswordRequest;
 import com.picvi.pet_companion_service.auth.dto.LoginResponse;
 import com.picvi.pet_companion_service.auth.service.AuthService;
+import com.picvi.pet_companion_service.auth.service.PasswordPolicy;
 import com.picvi.pet_companion_service.auth.service.RefreshTokenService;
 import com.picvi.pet_companion_service.exception.UserDoesNotExist;
 import com.picvi.pet_companion_service.exception.account.CurrentPasswordIncorrect;
@@ -23,6 +24,7 @@ public class PasswordService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
     private final AuthService authService;
+    private final PasswordPolicy passwordPolicy;
 
     @Transactional
     public LoginResponse change(UUID userId, ChangePasswordRequest request) {
@@ -33,6 +35,7 @@ public class PasswordService {
         if (request.currentPassword().equals(request.newPassword())) {
             throw new PasswordUnchanged();
         }
+        this.passwordPolicy.check(request.newPassword(), user.getUsername(), user.getEmail());
         user.setPassword_hash(this.passwordEncoder.encode(request.newPassword()));
         this.refreshTokenService.revokeAll(userId);
         return this.authService.issueSession(user);

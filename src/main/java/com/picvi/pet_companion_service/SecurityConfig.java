@@ -29,7 +29,7 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, exception) -> response.setStatus(HttpStatus.FORBIDDEN.value())))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/register", "/auth/login", "/auth/refresh", "/auth/logout",
-                                "/auth/verify-email", "/auth/resend-verification").permitAll()
+                                "/auth/verify-email", "/auth/resend-verification", "/auth/forgot-password", "/auth/reset-password").permitAll()
                         .requestMatchers("/actuator/health", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())

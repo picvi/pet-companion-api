@@ -87,4 +87,48 @@ class VerificationMailerTest {
 
         assertThatThrownBy(() -> mailer.sendCode("viki@example.com", "482913")).isInstanceOf(IllegalStateException.class);
     }
+
+    @Test
+    void passwordResetHtmlCarriesTheCodeAndTheEscapedUsername() {
+        String html = mailer.passwordResetHtml("<viki>", "482913");
+
+        assertThat(html).contains("482913").contains("&lt;viki&gt;").doesNotContain("{{").doesNotContain("<viki>");
+    }
+
+    @Test
+    void passwordResetPlainTextCarriesTheCodeAndTheUsername() {
+        assertThat(mailer.passwordResetPlainText("viki", "482913")).contains("482913").contains("viki");
+    }
+
+    @Test
+    void passwordResetMailHasItsOwnSubject() throws Exception {
+        when(sender.getIfAvailable()).thenReturn(mailSender);
+        when(mailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
+
+        mailer.sendPasswordResetCode("viki@example.com", "viki", "482913");
+
+        ArgumentCaptor<MimeMessage> sent = ArgumentCaptor.forClass(MimeMessage.class);
+        verify(mailSender).send(sent.capture());
+        sent.getValue().saveChanges();
+        assertThat(sent.getValue().getSubject()).isEqualTo("Your curl up password code: 482913");
+    }
+
+    @Test
+    void passwordChangedMailNeedsNoCodeAndPointsToSupport() throws Exception {
+        when(sender.getIfAvailable()).thenReturn(mailSender);
+        when(mailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
+
+        mailer.sendPasswordChanged("viki@example.com");
+
+        verify(mailSender).send(any(MimeMessage.class));
+        assertThat(mailer.passwordChangedPlainText()).contains("support@curl.pet");
+    }
+
+    @Test
+    void passwordResetWithoutMailConfigurationFailsInsteadOfLoggingTheCode() {
+        when(sender.getIfAvailable()).thenReturn(null);
+
+        assertThatThrownBy(() -> mailer.sendPasswordResetCode("viki@example.com", "viki", "482913"))
+                .isInstanceOf(IllegalStateException.class);
+    }
 }

@@ -12,18 +12,24 @@ import org.springframework.mail.MailPreparationException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.HtmlUtils;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-/** Sends over SMTP when spring.mail.host is set; without it the code is only logged if pawstep.auth.log-codes is on (local dev), otherwise sending fails. */
+/** Sends over SMTP when spring.mail.host is set; without it a code is only logged if pawstep.auth.log-codes is on (local dev), otherwise sending fails. */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class VerificationMailer {
-    private static final String TEMPLATE = "mail/verification-code.html";
+    private static final String VERIFICATION_TEMPLATE = "mail/verification-code.html";
+    private static final String RESET_TEMPLATE = "mail/password-reset-code.html";
+    private static final String PASSWORD_CHANGED_TEMPLATE = "mail/password-changed.html";
     private static final String CODE_PLACEHOLDER = "{{code}}";
+    private static final String USERNAME_PLACEHOLDER = "{{username}}";
 
     private final ObjectProvider<JavaMailSender> sender;
 
@@ -34,39 +40,23 @@ public class VerificationMailer {
     @Value("${pawstep.auth.log-codes:false}")
     private boolean logCodes;
 
-    private volatile String htmlTemplate;
+    private final Map<String, String> templates = new ConcurrentHashMap<>();
 
     public void sendCode(String to, String code) {
-        JavaMailSender mailSender = this.sender.getIfAvailable();
-        if (mailSender == null) {
-            if (!this.logCodes) {
-                throw new IllegalStateException("Mail is not configured (spring.mail.host), cannot send the verification code");
-            }
-            log.warn("Mail is not configured; verification code for {}: {}", to, code);
-            return;
-        }
-        MimeMessage message = mailSender.createMimeMessage();
-        try {
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
-            if (!this.from.isBlank()) {
-                helper.setFrom(this.from);
-            }
-            helper.setTo(to);
-            helper.setSubject("Your curl up code: " + code);
-            helper.setText(this.plainText(code), this.html(code));
-        } catch (MessagingException e) {
-            throw new MailPreparationException(e);
-        }
-        try {
-            mailSender.send(message);
-        } catch (MailException e) {
-            log.error("Could not send the verification code to {}", to, e);
-            throw e;
-        }
+        this.sendCodeMail(to, code, "Your curl up code: " + code, this.plainText(code), this.html(code));
+    }
+
+    public void sendPasswordResetCode(String to, String username, String code) {
+        this.sendCodeMail(to, code, "Your curl up password code: " + code,
+                this.passwordResetPlainText(username, code), this.passwordResetHtml(username, code));
+    }
+
+    public void sendPasswordChanged(String to) {
+        this.send(to, "Your curl up password was changed", this.passwordChangedPlainText(), this.template(PASSWORD_CHANGED_TEMPLATE));
     }
 
     String html(String code) {
-        return this.template().replace(CODE_PLACEHOLDER, code);
+        return this.template(VERIFICATION_TEMPLATE).replace(CODE_PLACEHOLDER, code);
     }
 
     String plainText(String code) {
@@ -76,16 +66,65 @@ public class VerificationMailer {
                 + "Did not sign up for curl up? Ignore this email. Nothing is created until the code is entered.\n";
     }
 
-    private String template() {
-        String loaded = this.htmlTemplate;
-        if (loaded == null) {
-            try (var in = new ClassPathResource(TEMPLATE).getInputStream()) {
-                loaded = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                throw new UncheckedIOException("Cannot read " + TEMPLATE, e);
-            }
-            this.htmlTemplate = loaded;
+    String passwordResetHtml(String username, String code) {
+        return this.template(RESET_TEMPLATE)
+                .replace(CODE_PLACEHOLDER, code)
+                .replace(USERNAME_PLACEHOLDER, HtmlUtils.htmlEscape(username));
+    }
+
+    String passwordResetPlainText(String username, String code) {
+        return "Your curl up password code: " + code + "\n\n"
+                + "Type it in the app to choose a new password. It works for 15 minutes, one time only.\n\n"
+                + "Your username: " + username + "\n\n"
+                + "Did not ask for this? Ignore this email. Your password stays the same.\n";
+    }
+
+    String passwordChangedPlainText() {
+        return "The password of your curl up account was changed, and every device was signed out.\n\n"
+                + "Was it you? Nothing else to do.\n\n"
+                + "Was it not you? Write to support@curl.pet right away.\n";
+    }
+
+    private void sendCodeMail(String to, String code, String subject, String text, String html) {
+        if (this.sender.getIfAvailable() == null && this.logCodes) {
+            log.warn("Mail is not configured; code for {}: {}", to, code);
+            return;
         }
-        return loaded;
+        this.send(to, subject, text, html);
+    }
+
+    private void send(String to, String subject, String text, String html) {
+        JavaMailSender mailSender = this.sender.getIfAvailable();
+        if (mailSender == null) {
+            throw new IllegalStateException("Mail is not configured (spring.mail.host), cannot send the message");
+        }
+        MimeMessage message = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
+            if (!this.from.isBlank()) {
+                helper.setFrom(this.from);
+            }
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(text, html);
+        } catch (MessagingException e) {
+            throw new MailPreparationException(e);
+        }
+        try {
+            mailSender.send(message);
+        } catch (MailException e) {
+            log.error("Could not send a mail to {}", to, e);
+            throw e;
+        }
+    }
+
+    private String template(String name) {
+        return this.templates.computeIfAbsent(name, key -> {
+            try (var in = new ClassPathResource(key).getInputStream()) {
+                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new UncheckedIOException("Cannot read " + key, e);
+            }
+        });
     }
 }

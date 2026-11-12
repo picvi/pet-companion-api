@@ -7,8 +7,9 @@ import com.picvi.pet_companion_service.auth.dto.RegisterResponse;
 import com.picvi.pet_companion_service.auth.dto.UserResponse;
 import com.picvi.pet_companion_service.exception.EmailNotVerified;
 import com.picvi.pet_companion_service.exception.InvalidRefreshToken;
+import com.picvi.pet_companion_service.exception.InvalidResetCode;
 import com.picvi.pet_companion_service.exception.InvalidVerificationCode;
-import com.picvi.pet_companion_service.exception.PasswordIncorrect;
+import com.picvi.pet_companion_service.exception.InvalidCredentials;
 import com.picvi.pet_companion_service.exception.UserAlreadyExistsException;
 import com.picvi.pet_companion_service.exception.UserDoesNotExist;
 import com.picvi.pet_companion_service.pet.repository.PetRepository;
@@ -31,6 +32,11 @@ public class AuthService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
+    private final LoginAttemptLimiter loginAttemptLimiter;
+    private final PasswordPolicy passwordPolicy;
+
+    private volatile String unknownUserHash;
 
     /** Off only for local debugging (see application.yml); the prod profile forces it on. */
     @Value("${pawstep.auth.email-verification-required:true}")
@@ -44,6 +50,7 @@ public class AuthService {
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
         String email = EmailAddress.normalise(request.email());
+        this.passwordPolicy.check(request.password(), request.username(), email);
         String passwordHash = this.passwordEncoder.encode(request.password());
         User owner = this.usersRepository.findByEmail(email).orElse(null);
         User sameUsername = this.usersRepository.findByUsername(request.username());
@@ -78,14 +85,16 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
+        this.loginAttemptLimiter.checkAllowed(request.username());
         User user = this.usersRepository.findByUsername(request.username());
 
-        if (user == null) {
-            throw new UserDoesNotExist();
+        String hashToCompare = user == null ? this.unknownUserHash() : user.getPassword_hash();
+        boolean passwordMatches = this.passwordEncoder.matches(request.password(), hashToCompare);
+        if (user == null || !passwordMatches) {
+            this.loginAttemptLimiter.recordFailure(request.username());
+            throw new InvalidCredentials();
         }
-        if (!this.passwordEncoder.matches(request.password(), user.getPassword_hash())) {
-            throw new PasswordIncorrect();
-        }
+        this.loginAttemptLimiter.recordSuccess(request.username());
         if (!user.isEmailVerified()) {
             throw new EmailNotVerified(user.getEmail());
         }
@@ -97,6 +106,14 @@ public class AuthService {
     @Transactional(noRollbackFor = InvalidVerificationCode.class)
     public LoginResponse verifyEmail(String email, String code) {
         return this.buildAuthResponse(this.emailVerificationService.verify(email, code));
+    }
+
+    /** A correct code proves the mailbox, so the user gets a session right away. Wrong guesses are counted and kept. */
+    @Transactional(noRollbackFor = InvalidResetCode.class)
+    public LoginResponse resetPassword(String email, String code, String newPassword) {
+        User user = this.passwordResetService.reset(email, code, newPassword);
+        this.loginAttemptLimiter.recordSuccess(user.getUsername());
+        return this.buildAuthResponse(user);
     }
 
     @Transactional(noRollbackFor = InvalidRefreshToken.class)
@@ -117,6 +134,16 @@ public class AuthService {
 
     public LoginResponse issueSession(User user) {
         return this.buildAuthResponse(user);
+    }
+
+    /** Lets a login for an unknown username spend the same bcrypt time as a real one. */
+    private String unknownUserHash() {
+        String hash = this.unknownUserHash;
+        if (hash == null) {
+            hash = this.passwordEncoder.encode(UUID.randomUUID().toString());
+            this.unknownUserHash = hash;
+        }
+        return hash;
     }
 
     private LoginResponse buildAuthResponse(User user) {

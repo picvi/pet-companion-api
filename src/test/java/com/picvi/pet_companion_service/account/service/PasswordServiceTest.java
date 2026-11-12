@@ -3,6 +3,8 @@ package com.picvi.pet_companion_service.account.service;
 import com.picvi.pet_companion_service.account.dto.ChangePasswordRequest;
 import com.picvi.pet_companion_service.auth.dto.LoginResponse;
 import com.picvi.pet_companion_service.auth.service.AuthService;
+import com.picvi.pet_companion_service.auth.service.PasswordPolicy;
+import com.picvi.pet_companion_service.exception.PasswordTooCommon;
 import com.picvi.pet_companion_service.auth.service.RefreshTokenService;
 import com.picvi.pet_companion_service.exception.UserDoesNotExist;
 import com.picvi.pet_companion_service.exception.account.CurrentPasswordIncorrect;
@@ -22,6 +24,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -43,13 +46,15 @@ class PasswordServiceTest {
     private RefreshTokenService refreshTokenService;
     @Mock
     private AuthService authService;
+    @Mock
+    private PasswordPolicy passwordPolicy;
 
     private PasswordService service;
     private User user;
 
     @BeforeEach
     void setUp() {
-        this.service = new PasswordService(this.usersRepository, this.passwordEncoder, this.refreshTokenService, this.authService);
+        this.service = new PasswordService(this.usersRepository, this.passwordEncoder, this.refreshTokenService, this.authService, this.passwordPolicy);
         this.user = new User();
         this.user.setPassword_hash(OLD_HASH);
         lenient().when(this.usersRepository.findById(USER_ID)).thenReturn(Optional.of(this.user));
@@ -73,6 +78,18 @@ class PasswordServiceTest {
         assertThatThrownBy(() -> this.service.change(USER_ID, new ChangePasswordRequest("old-secret-1", "old-secret-1")))
                 .isInstanceOf(PasswordUnchanged.class);
 
+        verify(this.refreshTokenService, never()).revokeAll(USER_ID);
+    }
+
+    @Test
+    void commonNewPasswordIsRejectedAndNothingChanges() {
+        when(this.passwordEncoder.matches("old-secret-1", OLD_HASH)).thenReturn(true);
+        doThrow(new PasswordTooCommon()).when(this.passwordPolicy).check("password1", null, null);
+
+        assertThatThrownBy(() -> this.service.change(USER_ID, new ChangePasswordRequest("old-secret-1", "password1")))
+                .isInstanceOf(PasswordTooCommon.class);
+
+        assertThat(this.user.getPassword_hash()).isEqualTo(OLD_HASH);
         verify(this.refreshTokenService, never()).revokeAll(USER_ID);
     }
 

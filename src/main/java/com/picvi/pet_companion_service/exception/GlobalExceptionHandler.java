@@ -102,9 +102,22 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.NOT_FOUND, ex);
     }
 
-    @ExceptionHandler(PasswordIncorrect.class)
-    public ResponseEntity<ErrorResponse> handlePasswordIncorrect(PasswordIncorrect ex) {
+    @ExceptionHandler(InvalidCredentials.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentials ex) {
         return error(HttpStatus.UNAUTHORIZED, ex);
+    }
+
+    @ExceptionHandler(TooManyLoginAttempts.class)
+    public ResponseEntity<ErrorResponse> handleTooManyLoginAttempts(TooManyLoginAttempts ex) {
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(new ErrorResponse(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getCode(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(PasswordTooCommon.class)
+    public ResponseEntity<ErrorResponse> handlePasswordTooCommon(PasswordTooCommon ex) {
+        return error(HttpStatus.BAD_REQUEST, ex);
     }
 
     @ExceptionHandler(EmailNotVerified.class)
@@ -116,6 +129,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidVerificationCode.class)
     public ResponseEntity<ErrorResponse> handleInvalidVerificationCode(InvalidVerificationCode ex) {
+        return error(HttpStatus.BAD_REQUEST, ex);
+    }
+
+    @ExceptionHandler(InvalidResetCode.class)
+    public ResponseEntity<ErrorResponse> handleInvalidResetCode(InvalidResetCode ex) {
         return error(HttpStatus.BAD_REQUEST, ex);
     }
 

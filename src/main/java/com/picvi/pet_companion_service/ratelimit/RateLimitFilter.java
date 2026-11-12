@@ -36,6 +36,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 "/auth/register", new SlidingWindowRateLimiter(5, Duration.ofHours(1), clock),
                 "/auth/resend-verification", new SlidingWindowRateLimiter(5, Duration.ofHours(1), clock),
                 "/auth/verify-email", new SlidingWindowRateLimiter(10, Duration.ofMinutes(15), clock),
+                "/auth/forgot-password", new SlidingWindowRateLimiter(5, Duration.ofHours(1), clock),
+                "/auth/reset-password", new SlidingWindowRateLimiter(10, Duration.ofMinutes(15), clock),
+                "/auth/refresh", new SlidingWindowRateLimiter(60, Duration.ofMinutes(15), clock),
                 "/auth/login", new SlidingWindowRateLimiter(20, Duration.ofMinutes(15), clock));
     }
 

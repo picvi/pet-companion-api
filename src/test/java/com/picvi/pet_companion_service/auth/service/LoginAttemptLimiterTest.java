@@ -13,46 +13,62 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class LoginAttemptLimiterTest {
     private final MutableClock clock = new MutableClock();
-    private final LoginAttemptLimiter limiter = new LoginAttemptLimiter(this.clock);
+    private static final int MAX_FAILURES = 10;
+    private static final Duration LOCK = Duration.ofMinutes(15);
+
+    private final LoginAttemptLimiter limiter = new LoginAttemptLimiter(this.clock, MAX_FAILURES, LOCK);
 
     @Test
     void locksTheAccountAfterTenFailuresEvenForUnknownNames() {
-        failTimes("Ghost", LoginAttemptLimiter.MAX_FAILURES);
+        failTimes("Ghost", MAX_FAILURES);
 
         assertThatThrownBy(() -> this.limiter.checkAllowed("ghost")).isInstanceOf(TooManyLoginAttempts.class);
     }
 
     @Test
     void otherAccountsAreNotAffected() {
-        failTimes("viki", LoginAttemptLimiter.MAX_FAILURES);
+        failTimes("viki", MAX_FAILURES);
 
         assertThatCode(() -> this.limiter.checkAllowed("marta")).doesNotThrowAnyException();
     }
 
     @Test
     void lockEndsAfterTheLockPeriod() {
-        failTimes("viki", LoginAttemptLimiter.MAX_FAILURES);
-        this.clock.advance(LoginAttemptLimiter.LOCK.plusSeconds(1));
+        failTimes("viki", MAX_FAILURES);
+        this.clock.advance(LOCK.plusSeconds(1));
 
         assertThatCode(() -> this.limiter.checkAllowed("viki")).doesNotThrowAnyException();
     }
 
     @Test
     void successClearsTheFailureCount() {
-        failTimes("viki", LoginAttemptLimiter.MAX_FAILURES - 1);
+        failTimes("viki", MAX_FAILURES - 1);
         this.limiter.recordSuccess("viki");
-        failTimes("viki", LoginAttemptLimiter.MAX_FAILURES - 1);
+        failTimes("viki", MAX_FAILURES - 1);
 
         assertThatCode(() -> this.limiter.checkAllowed("viki")).doesNotThrowAnyException();
     }
 
     @Test
     void failuresOutsideTheWindowDoNotAccumulate() {
-        failTimes("viki", LoginAttemptLimiter.MAX_FAILURES - 1);
+        failTimes("viki", MAX_FAILURES - 1);
         this.clock.advance(LoginAttemptLimiter.WINDOW.plusSeconds(1));
-        failTimes("viki", LoginAttemptLimiter.MAX_FAILURES - 1);
+        failTimes("viki", MAX_FAILURES - 1);
 
         assertThatCode(() -> this.limiter.checkAllowed("viki")).doesNotThrowAnyException();
+    }
+
+    @Test
+    void maxFailuresIsConfigurable() {
+        LoginAttemptLimiter strict = new LoginAttemptLimiter(this.clock, 5, LOCK);
+        for (int i = 0; i < 4; i++) {
+            strict.recordFailure("viki");
+        }
+        assertThatCode(() -> strict.checkAllowed("viki")).doesNotThrowAnyException();
+
+        strict.recordFailure("viki");
+
+        assertThatThrownBy(() -> strict.checkAllowed("viki")).isInstanceOf(TooManyLoginAttempts.class);
     }
 
     private void failTimes(String username, int times) {

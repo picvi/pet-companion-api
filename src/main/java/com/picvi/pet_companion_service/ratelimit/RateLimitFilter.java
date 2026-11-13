@@ -17,7 +17,9 @@ import java.time.Duration;
 import java.util.Map;
 
 /**
- * Per-IP limits on the public auth endpoints, which are the ones that cost money (mail) or can be brute-forced.
+ * Per-IP limits on the public auth endpoints, which are the ones that cost money (mail) or can be brute-forced, and on
+ * the authenticated re-authentication endpoints (password change, account deletion), where they only blunt bursts: the
+ * per-user lock in {@code reauthAttemptLimiter} is the real protection there.
  * With trust-forwarded-for (behind Caddy, app port not published) the client address is the last X-Forwarded-For entry,
  * the one Caddy itself appended; otherwise the header is ignored because anyone could forge it.
  */
@@ -39,7 +41,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 "/auth/forgot-password", new SlidingWindowRateLimiter(5, Duration.ofHours(1), clock),
                 "/auth/reset-password", new SlidingWindowRateLimiter(10, Duration.ofMinutes(15), clock),
                 "/auth/refresh", new SlidingWindowRateLimiter(60, Duration.ofMinutes(15), clock),
-                "/auth/login", new SlidingWindowRateLimiter(20, Duration.ofMinutes(15), clock));
+                "/auth/login", new SlidingWindowRateLimiter(20, Duration.ofMinutes(15), clock),
+                "/me/password", new SlidingWindowRateLimiter(10, Duration.ofMinutes(15), clock),
+                "/me/deletion", new SlidingWindowRateLimiter(10, Duration.ofMinutes(15), clock));
     }
 
     @Override

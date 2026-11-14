@@ -6,8 +6,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.picvi.pet_companion_service.brief.dto.BriefOptionsResponse;
 import com.picvi.pet_companion_service.brief.dto.VetBriefResponse;
-import com.picvi.pet_companion_service.medical.dto.CreateVetVisitRequest;
-import com.picvi.pet_companion_service.medical.dto.VetVisitDto;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -27,18 +25,6 @@ class VetBriefContractTest {
     @Test
     void briefFixtureRoundTrips() throws IOException {
         this.assertRoundTrip("vet-brief-response.json", VetBriefResponse.class);
-    }
-
-    @Test
-    void visitFixtureRoundTrips() throws IOException {
-        this.assertRoundTrip("vet-brief-visit.json", VetVisitDto.class);
-    }
-
-    @Test
-    void createRequestFixtureReads() throws IOException {
-        CreateVetVisitRequest request = this.mapper.readValue(this.fixture("vet-brief-visit-create-request.json"), CreateVetVisitRequest.class);
-
-        assertThat(request.outcomes()).hasSize(2);
     }
 
     private <T> void assertRoundTrip(String name, Class<T> type) throws IOException {

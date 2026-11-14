@@ -18,6 +18,9 @@
     "wellbeing": null,
     "label": null,
     "dose": null,
+    "courseId": null,
+    "doseOn": null,
+    "doseMinute": null,
     "note": "loose",
     "foods": []
   },
@@ -37,6 +40,9 @@
     "wellbeing": null,
     "label": null,
     "dose": null,
+    "courseId": null,
+    "doseOn": null,
+    "doseMinute": null,
     "note": null,
     "foods": []
   },
@@ -58,6 +64,9 @@
     "wellbeing": null,
     "label": "Puppy mix",
     "dose": null,
+    "courseId": null,
+    "doseOn": null,
+    "doseMinute": null,
     "note": null,
     "foods": [
       {}
@@ -79,6 +88,9 @@
     "wellbeing": null,
     "label": null,
     "dose": null,
+    "courseId": null,
+    "doseOn": null,
+    "doseMinute": null,
     "note": "nap",
     "foods": []
   },
@@ -98,6 +110,9 @@
     "wellbeing": null,
     "label": null,
     "dose": null,
+    "courseId": null,
+    "doseOn": null,
+    "doseMinute": null,
     "note": null,
     "foods": []
   },
@@ -117,6 +132,9 @@
     "wellbeing": null,
     "label": null,
     "dose": null,
+    "courseId": null,
+    "doseOn": null,
+    "doseMinute": null,
     "note": null,
     "foods": []
   },
@@ -136,6 +154,9 @@
     "wellbeing": null,
     "label": null,
     "dose": null,
+    "courseId": null,
+    "doseOn": null,
+    "doseMinute": null,
     "note": null,
     "foods": []
   },
@@ -155,6 +176,9 @@
     "wellbeing": "QUIETER",
     "label": null,
     "dose": null,
+    "courseId": null,
+    "doseOn": null,
+    "doseMinute": null,
     "note": "twice",
     "foods": []
   },
@@ -174,6 +198,9 @@
     "wellbeing": null,
     "label": "Drontal",
     "dose": "1 tablet",
+    "courseId": null,
+    "doseOn": null,
+    "doseMinute": null,
     "note": null,
     "foods": []
   },
@@ -193,6 +220,9 @@
     "wellbeing": null,
     "label": null,
     "dose": null,
+    "courseId": null,
+    "doseOn": null,
+    "doseMinute": null,
     "note": "all fine",
     "foods": []
   }

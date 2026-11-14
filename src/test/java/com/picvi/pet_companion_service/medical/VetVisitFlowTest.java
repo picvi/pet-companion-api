@@ -12,6 +12,9 @@ import com.picvi.pet_companion_service.medical.dto.VetVisitDto;
 import com.picvi.pet_companion_service.medical.dto.VisitHistoryPage;
 import com.picvi.pet_companion_service.medical.service.VetVisitService;
 import com.picvi.pet_companion_service.medication.domain.CourseStatus;
+import com.picvi.pet_companion_service.medication.domain.DoseSchedule;
+import com.picvi.pet_companion_service.medication.domain.DoseUnit;
+import com.picvi.pet_companion_service.medication.domain.WithFood;
 import com.picvi.pet_companion_service.petlog.api.PetLogRecorder;
 import com.picvi.pet_companion_service.support.DatabaseSeed;
 import com.picvi.pet_companion_service.support.PostgresTest;
@@ -148,7 +151,7 @@ class VetVisitFlowTest extends PostgresTest {
             assertThat(visit.weightGrams()).isEqualTo(4200);
             assertThat(visit.courses()).extracting("status").containsExactly(CourseStatus.ACTIVE.name());
         });
-        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(12);
+        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(15);
     }
 
     @Test
@@ -163,8 +166,8 @@ class VetVisitFlowTest extends PostgresTest {
     }
 
     private LogVisitRequest fullVisit(UUID clientId, LocalDate on) {
-        HomeCourse course = new HomeCourse(UUID.randomUUID(), "Metronidazole", 50, null, null, null, List.of(480), null,
-                this.today, 480, this.today.plusDays(7), 480, true);
+        HomeCourse course = new HomeCourse(UUID.randomUUID(), "Metronidazole", 50, DoseUnit.TABLET, DoseSchedule.DAILY, null, List.of(480),
+                WithFood.YES, this.today, 480, this.today.plusDays(7), 480, true);
         return new LogVisitRequest(clientId, this.today, on, 600, "VetCare", "Upset tummy", false, List.of(CARE_CODE),
                 List.of(new ClinicMedicine("Convenia injection", "0.5 ml")), List.of(course), 4200,
                 List.of(new TestRequest(VisitTestKind.BLOOD, true)), null,

@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /** Reads what visits point at with one call per module for all of them, so a page of visits costs the same as one visit. */
@@ -31,10 +32,13 @@ public class VisitLinksReader {
     private final MedicationApi medicationApi;
 
     public Map<UUID, VisitLinks> read(UUID petId, Collection<VetVisit> visits, LocalDate date) {
-        Map<UUID, CareEventDto> careEvents = this.byId(this.careApi.events(petId, ids(visits, VetVisit::getCareEventIds)), CareEventDto::id);
-        Map<UUID, LogSnapshot> logs = this.byId(this.petLogApi.snapshots(petId, logIds(visits)), LogSnapshot::logId);
-        Map<UUID, MedicationApi.CourseSummary> courses = this.byId(
-                this.medicationApi.courses(petId, ids(visits, VetVisit::getCourseIds), date), MedicationApi.CourseSummary::id);
+        Collection<UUID> careEventIds = ids(visits, VetVisit::getCareEventIds);
+        Collection<UUID> logIds = logIds(visits);
+        Collection<UUID> courseIds = ids(visits, VetVisit::getCourseIds);
+        Map<UUID, CareEventDto> careEvents = this.byId(careEventIds, () -> this.careApi.events(petId, careEventIds), CareEventDto::id);
+        Map<UUID, LogSnapshot> logs = this.byId(logIds, () -> this.petLogApi.snapshots(petId, logIds), LogSnapshot::logId);
+        Map<UUID, MedicationApi.CourseSummary> courses = this.byId(courseIds,
+                () -> this.medicationApi.courses(petId, courseIds, date), MedicationApi.CourseSummary::id);
 
         Map<UUID, VisitLinks> links = new HashMap<>();
         visits.forEach(visit -> links.put(visit.getId(), linksOf(visit, careEvents, logs, courses)));
@@ -77,7 +81,10 @@ public class VisitLinksReader {
         return visits.stream().flatMap(visit -> idsOf.apply(visit).stream()).collect(Collectors.toSet());
     }
 
-    private <T> Map<UUID, T> byId(List<T> items, Function<T, UUID> idOf) {
-        return items.stream().collect(Collectors.toMap(idOf, Function.identity()));
+    private <T> Map<UUID, T> byId(Collection<UUID> ids, Supplier<List<T>> read, Function<T, UUID> idOf) {
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return read.get().stream().collect(Collectors.toMap(idOf, Function.identity()));
     }
 }

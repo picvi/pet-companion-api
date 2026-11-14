@@ -13,6 +13,7 @@ import com.picvi.pet_companion_service.medical.domain.VetAppointmentRule;
 import com.picvi.pet_companion_service.medical.domain.VetVisitRules;
 import com.picvi.pet_companion_service.medical.domain.VisitHistoryPaging;
 import com.picvi.pet_companion_service.medical.domain.VisitOutcomeRule;
+import com.picvi.pet_companion_service.medical.domain.VisitLogRole;
 import com.picvi.pet_companion_service.medical.domain.VisitStatus;
 import com.picvi.pet_companion_service.medical.dto.PlanVisitRequest;
 import com.picvi.pet_companion_service.medical.dto.UpcomingVisitsResponse;
@@ -251,6 +252,11 @@ class VetVisitServiceTest {
     @Test
     void historyReadsLinksOncePerModuleAndMarksTheNextPage() {
         List<VetVisit> rows = List.of(doneOn(TODAY), doneOn(TODAY.minusDays(1)), doneOn(TODAY.minusDays(2)));
+        rows.forEach(row -> {
+            row.getCareEventIds().add(UUID.randomUUID());
+            row.getLogs().put(UUID.randomUUID(), VisitLogRole.WEIGHT);
+            row.getCourseIds().add(UUID.randomUUID());
+        });
         when(this.repository.findAllByPetIdAndStatusAndVisitedOnLessThanOrderByVisitedOnDescCreatedAtDesc(
                 eq(PET), eq(VisitStatus.DONE), any(), any())).thenReturn(rows);
 

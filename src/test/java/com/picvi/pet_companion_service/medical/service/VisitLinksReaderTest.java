@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -90,6 +91,15 @@ class VisitLinksReaderTest {
         when(this.medicationApi.courses(eq(PET), anyCollection(), eq(DAY))).thenReturn(List.of());
 
         assertThat(this.reader.read(PET, List.of(visit), DAY).get(visit.getId())).isEqualTo(VisitLinks.none());
+    }
+
+    @Test
+    void aVisitThatPointsAtNothingAsksNoModule() {
+        VetVisit visit = visit();
+
+        assertThat(this.reader.read(PET, List.of(visit), DAY).get(visit.getId())).isEqualTo(VisitLinks.none());
+
+        verifyNoInteractions(this.careApi, this.petLogApi, this.medicationApi);
     }
 
     private static VetVisit visit() {

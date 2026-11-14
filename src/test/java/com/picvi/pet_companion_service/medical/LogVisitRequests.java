@@ -6,6 +6,9 @@ import com.picvi.pet_companion_service.medical.dto.LogVisitRequest.FollowUp;
 import com.picvi.pet_companion_service.medical.dto.LogVisitRequest.HomeCourse;
 import com.picvi.pet_companion_service.medical.dto.LogVisitRequest.Procedure;
 import com.picvi.pet_companion_service.medical.dto.LogVisitRequest.TestRequest;
+import com.picvi.pet_companion_service.medication.domain.DoseSchedule;
+import com.picvi.pet_companion_service.medication.domain.DoseUnit;
+import com.picvi.pet_companion_service.medication.domain.WithFood;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -106,6 +109,6 @@ public final class LogVisitRequests {
     }
 
     public static HomeCourse aCourse(String name) {
-        return new HomeCourse(UUID.randomUUID(), name, 50, null, null, null, List.of(480), null, TODAY, 480, TODAY.plusDays(7), 480, true);
+        return new HomeCourse(UUID.randomUUID(), name, 50, DoseUnit.TABLET, DoseSchedule.DAILY, null, List.of(480), WithFood.YES, TODAY, 480, TODAY.plusDays(7), 480, true);
     }
 }

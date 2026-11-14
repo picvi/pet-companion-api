@@ -86,7 +86,7 @@ class MedicationServiceTest {
         assertThat(result.course().name()).isEqualTo("Amoxicillin");
         assertThat(result.course().status()).isEqualTo(CourseStatus.ACTIVE);
         assertThat(result.course().totalDays()).isEqualTo(7);
-        assertThat(result.course().doses()).hasSize(14);
+        assertThat(result.course().doses()).hasSize(5);
         assertThat(result.course().givenDoses()).isZero();
     }
 

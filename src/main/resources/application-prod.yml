@@ -9,6 +9,8 @@ springdoc:
     enabled: false
 
 pawstep:
+  app-version:
+    enabled: true
   rate-limit:
     trust-forwarded-for: true
   auth:

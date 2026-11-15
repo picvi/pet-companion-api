@@ -20,6 +20,18 @@ spring:
     refresh-token-expiration: 30d
 
 pawstep:
+  app-version:
+    # Off locally. application-prod.yml turns it on: clients below `minimum` get 426 APP_UPDATE_REQUIRED.
+    enabled: false
+    ios:
+      minimum: 1.0.0
+      latest: 1.0.0
+      store-url: ${PAWSTEP_IOS_STORE_URL:}
+    android:
+      minimum: 1.0.0
+      latest: 1.0.0
+      store-url: ${PAWSTEP_ANDROID_STORE_URL:}
+
   admin:
     # comma-separated; the daily food digest goes here. Mail itself is set with spring.mail.* (SPRING_MAIL_HOST, ...).
     emails: ${PAWSTEP_ADMIN_EMAILS:}

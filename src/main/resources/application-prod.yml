@@ -17,7 +17,9 @@ pawstep:
     email-verification-required: true
     log-codes: false
   triage:
-    require-reviewed: true
+    # not yet implemented
+    enabled: false
+    require-reviewed: false
 
 management:
   endpoints:

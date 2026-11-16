@@ -7,6 +7,7 @@ import com.picvi.pet_companion_service.triage.service.CheckFollowUpService;
 import com.picvi.pet_companion_service.triage.service.CheckService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
+@ConditionalOnProperty(name = "pawstep.triage.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 @RequestMapping("/pets/{petId}/checks")
 public class CheckController {

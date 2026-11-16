@@ -1,13 +1,13 @@
 services:
   db:
-    image: postgres:17
+    image: postgres:18
     restart: unless-stopped
     environment:
       POSTGRES_DB: pet_companion
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d pet_companion"]
       interval: 10s

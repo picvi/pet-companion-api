@@ -6,6 +6,7 @@ import com.picvi.pet_companion_service.triage.dto.OpenChecksResponse;
 import com.picvi.pet_companion_service.triage.service.CheckReadService;
 import com.picvi.pet_companion_service.triage.service.CheckContextService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
+@ConditionalOnProperty(name = "pawstep.triage.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 @RequestMapping("/pets/{petId}/checks")
 public class CheckContextController {
